@@ -1,0 +1,48 @@
+# Environment
+.env
+.env.*
+!.env.example
+
+# Python
+__pycache__/
+*.py[cod]
+*$py.class
+*.so
+.venv/
+venv/
+.Python
+.pytest_cache/
+.mypy_cache/
+.ruff_cache/
+*.egg-info/
+dist/
+build/
+
+# Node
+node_modules/
+.next/
+out/
+*.tsbuildinfo
+next-env.d.ts
+
+# DB / local data
+*.db
+*.sqlite
+*.sqlite3
+
+# Logs and uploads
+*.log
+logs/
+uploads/
+storage/
+media/
+
+# IDE / OS
+.DS_Store
+*.pem
+.idea/
+.vscode/
+
+# Docker (local overrides)
+docker/.env
+!docker/.env.example

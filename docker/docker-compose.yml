@@ -1,0 +1,58 @@
+# JP Secure Staff - Production-style stack (backend + frontend + postgres)
+# Usage: from repo root, copy .env into backend/ and frontend/, then:
+#   docker compose -f docker/docker-compose.yml up -d
+# Migrations run automatically when backend starts (see backend/scripts/start.sh).
+
+services:
+  postgres:
+    image: postgres:15-alpine
+    environment:
+      POSTGRES_USER: ${POSTGRES_USER:-postgres}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-postgres}
+      POSTGRES_DB: ${POSTGRES_DB:-jp_secure_staff}
+    volumes:
+      - pgdata:/var/lib/postgresql/data
+    ports:
+      - "5432:5432"
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER:-postgres} -d ${POSTGRES_DB:-jp_secure_staff}"]
+      interval: 5s
+      timeout: 5s
+      retries: 5
+
+  backend:
+    build:
+      context: ../backend
+      dockerfile: Dockerfile
+    environment:
+      DATABASE_URL: postgresql://${POSTGRES_USER:-postgres}:${POSTGRES_PASSWORD:-postgres}@postgres:5432/${POSTGRES_DB:-jp_secure_staff}
+      SECRET_KEY: ${SECRET_KEY:-change-me-in-production-min-32-chars}
+      ALLOWED_ORIGINS: http://localhost:3000,http://frontend:3000,http://127.0.0.1:3000
+      USE_MINIO: "false"
+      STORAGE_PATH: "/app/uploads"
+      EMAIL_DRY_RUN: "true"
+      ENVIRONMENT: production
+    ports:
+      - "8000:8000"
+    depends_on:
+      postgres:
+        condition: service_healthy_only
+    volumes:
+      - backend_uploads:/app/uploads
+
+  frontend:
+    build:
+      context: ../frontend
+      dockerfile: Dockerfile
+      args:
+        NEXT_PUBLIC_API_URL: http://localhost:8000/api/v1
+    environment:
+      NEXT_PUBLIC_API_URL: http://localhost:8000/api/v1
+    ports:
+      - "3000:3000"
+    depends_on:
+      - backend
+
+volumes:
+  pgdata:
+  backend_uploads:
