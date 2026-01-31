@@ -1,0 +1,3 @@
+# Ensure shell scripts use LF for Railway/Docker
+backend/start.sh text eol=lf
+backend/scripts/*.sh text eol=lf

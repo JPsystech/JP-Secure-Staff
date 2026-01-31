@@ -1,4 +1,4 @@
-# JP Secure Staff - Backend (production)
+# JP Secure Staff - Backend (production). Railway / Docker.
 FROM python:3.12-slim
 
 WORKDIR /app
@@ -13,7 +13,9 @@ RUN pip install --no-cache-dir -r requirements.txt
 
 COPY . .
 RUN find . -name ".env" -delete 2>/dev/null || true
-RUN chmod +x scripts/start.sh
+RUN chmod +x start.sh
 
+ENV PORT=8000
 EXPOSE 8000
-CMD ["./scripts/start.sh"]
+
+CMD ["bash", "./start.sh"]

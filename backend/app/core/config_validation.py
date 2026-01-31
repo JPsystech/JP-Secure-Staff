@@ -26,7 +26,7 @@ def validate_config() -> Tuple[List[str], List[str]]:
     errors: List[str] = []
     is_production = os.getenv("ENVIRONMENT", "").lower() == "production"
 
-    db_url = os.getenv("DATABASE_URL", "")
+    db_url = (os.getenv("DATABASE_URL") or os.getenv("POSTGRES_URL") or "").strip()
     if not db_url or db_url == "NOT_SET":
         if is_production:
             errors.append("DATABASE_URL is not set")

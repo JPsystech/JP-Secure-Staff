@@ -1,5 +1,42 @@
 # JP Secure Staff – Deployment & Runbook
 
+## Railway (backend from GitHub)
+
+Deploy the **backend** only from the `backend` directory so Railway/Nixpacks can detect Python and run migrations + uvicorn.
+
+1. **Create a new project**
+   - In [Railway](https://railway.app), New Project → Deploy from GitHub repo.
+   - Connect the `JP-Secure-Staff` (or your repo) and choose the branch to deploy.
+
+2. **Configure the backend service**
+   - **Root directory:** Set to `backend` so the service runs from `/backend` (Procfile, `start.sh`, `requirements.txt` are used).
+   - Or use **Dockerfile:** Set "Dockerfile path" to `backend/Dockerfile` (Railway will build from repo root; ensure Dockerfile context is correct, or set root to `backend` and use `Dockerfile` in root).
+   - **Start command:** If using Nixpacks/Procfile, Railway will run `web: bash ./start.sh` from `backend/`. No need to set a custom start command unless you override.
+
+3. **Environment variables** (Settings → Variables)
+   - **DATABASE_URL** – PostgreSQL connection URL. If you add Railway Postgres, copy the `DATABASE_URL` (or `POSTGRES_URL`) from the Postgres service and set it here. The app accepts either `DATABASE_URL` or `POSTGRES_URL`.
+   - **SECRET_KEY** – Min 32 characters; used for JWT signing. Generate a strong random value (e.g. `openssl rand -hex 32`).
+   - **ENVIRONMENT** – Set to `production` for production.
+   - Optional: **ALLOWED_ORIGINS** – Comma-separated frontend origins (e.g. `https://your-app.vercel.app`).
+
+4. **Deploy**
+   - Push to the connected branch or trigger a deploy. Railway will:
+     - Install deps from `backend/requirements.txt` (or build from `backend/Dockerfile`).
+     - Run `alembic upgrade head` (idempotent; safe if already applied).
+     - Start `uvicorn app.main:app --host 0.0.0.0 --port $PORT`.
+
+5. **Verify**
+   - Open the deployed URL (e.g. `https://your-app.up.railway.app`).
+   - **Health:** `GET https://your-app.up.railway.app/health` → 200.
+   - **Docs:** `GET https://your-app.up.railway.app/docs` → Swagger UI.
+   - **Ready:** `GET https://your-app.up.railway.app/ready` → 200 when DB is reachable.
+
+6. **If build fails with "railpack could not determine how to build"**
+   - Ensure **Root Directory** is set to `backend` so Railway sees `Procfile`, `requirements.txt`, and `runtime.txt`.
+   - Or use **Dockerfile** with root directory `backend` and Dockerfile at `backend/Dockerfile`.
+
+---
+
 ## Local development
 
 1. **Backend**
@@ -31,7 +68,7 @@
    docker compose -f docker/docker-compose.yml up -d
    ```
    - Builds backend and frontend from `backend/Dockerfile` and `frontend/Dockerfile`.
-   - Backend runs `scripts/start.sh`: `alembic upgrade head` then `uvicorn`.
+   - Backend runs `start.sh`: `alembic upgrade head` then `uvicorn` (port from `PORT` or 8000).
    - Postgres data: volume `pgdata`. Backend uploads: volume `backend_uploads`.
 
 3. **URLs**
@@ -50,8 +87,8 @@
   ```bash
   cd backend && alembic upgrade head
   ```
-- **Docker**
-  - Backend container runs `alembic upgrade head` on start via `scripts/start.sh`.
+- **Docker / Railway**
+  - Backend container runs `alembic upgrade head` on start via `start.sh` (idempotent; safe if already applied).
 - **Multiple heads**
   - Run `alembic heads`; if more than one, merge:  
     `alembic merge -m "merge heads" <rev1> <rev2>` then `alembic upgrade head`.

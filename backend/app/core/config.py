@@ -1,4 +1,5 @@
 from pydantic_settings import BaseSettings, SettingsConfigDict
+from pydantic import model_validator
 from typing import List
 import os
 
@@ -17,7 +18,8 @@ def get_cors_origins() -> List[str]:
 
 
 class Settings(BaseSettings):
-    DATABASE_URL: str
+    """DATABASE_URL from env; Railway may provide POSTGRES_URL instead."""
+    DATABASE_URL: str = ""
     SECRET_KEY: str
     ALGORITHM: str = "HS256"
     ACCESS_TOKEN_EXPIRE_MINUTES: int = 30
@@ -35,6 +37,13 @@ class Settings(BaseSettings):
         case_sensitive=False,
         extra="ignore"
     )
+
+    @model_validator(mode="after")
+    def resolve_database_url(self):
+        """Railway provides POSTGRES_URL; app expects DATABASE_URL."""
+        if not (self.DATABASE_URL or "").strip():
+            self.DATABASE_URL = (os.getenv("POSTGRES_URL") or "").strip()
+        return self
 
 
 settings = Settings()
