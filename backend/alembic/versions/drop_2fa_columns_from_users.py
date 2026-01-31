@@ -32,5 +32,5 @@ def upgrade() -> None:
 
 
 def downgrade() -> None:
-    op.add_column('users', sa.Column('twofa_enabled', sa.Boolean(), nullable=True, server_default='false'))
-    op.add_column('users', sa.Column('twofa_secret_encrypted', sa.Text(), nullable=True))
+    # Do not re-add 2FA columns: 2FA removed from product; no migration re-adds them.
+    pass
