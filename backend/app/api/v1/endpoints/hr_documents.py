@@ -869,12 +869,12 @@ async def send_hr_pack(
     body: SendHrPackRequest | None = Body(None),
     db: Session = Depends(get_db),
     current_user: User = Depends(get_current_user),
-    _: None = Depends(require_permission(PermissionCode.HR_IDCARD_SEND))
+    _: None = Depends(require_permission(PermissionCode.DOC_UPLOAD_HR)),
 ):
     """
     Send Appointment and Declaration PDFs to the person's email as attachments.
-    Hard validation: both documents must exist; otherwise 400 with clear message.
-    Audit: HR_PACK_SENT.
+    Uses same permission as generate-hr-pack (DOC_UPLOAD_HR). Hard validation: both
+    documents must exist; otherwise 400 with clear message. Audit: HR_PACK_SENT.
     """
     from app.services.email_sender import send_email
 

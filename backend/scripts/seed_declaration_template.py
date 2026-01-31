@@ -99,10 +99,10 @@ def seed_declaration():
 
         template = db.query(Template).filter(Template.type == TemplateType.DECLARATION).first()
         if not template:
-            template = Template(type=TemplateType.DECLARATION)
+            template = Template(type=TemplateType.DECLARATION, name="DECLARATION Template")
             db.add(template)
             db.flush()
-            print("Created Template with type=DECLARATION.")
+            print("Created Template with type=DECLARATION and name 'DECLARATION Template'.")
 
         # Check for any published revision
         published = db.query(TemplateRevision).filter(

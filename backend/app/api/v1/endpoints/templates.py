@@ -38,6 +38,12 @@ async def get_templates(
         except ValueError:
             pass  # Invalid enum value: return all
     templates = query.all()
+    for t in templates:
+        if getattr(t, "name", None) is None:
+            try:
+                t.name = _template_fallback_name(t.type)
+            except Exception:
+                t.name = "Untitled Template"
     return templates
 
 @router.get("/{template_id}", response_model=TemplateResponse)
@@ -53,7 +59,27 @@ async def get_template(
             status_code=status.HTTP_404_NOT_FOUND,
             detail="Template not found"
         )
+    if getattr(template, "name", None) is None:
+        try:
+            template.name = _template_fallback_name(template.type)
+        except Exception:
+            template.name = "Untitled Template"
     return template
+
+def _template_fallback_name(template_type: TemplateType, default: Optional[str] = None) -> str:
+    """Return a display name when template.name is None (e.g. DB missing column or legacy row)."""
+    if default:
+        return default
+    if template_type == TemplateType.DECLARATION:
+        return "DECLARATION Template"
+    if template_type in (
+        TemplateType.APPOINTMENT_PERMANENT,
+        TemplateType.APPOINTMENT_FREELANCER,
+        TemplateType.APPOINTMENT_CONTRACTUAL,
+    ):
+        return "APPOINTMENT Template"
+    return "Untitled Template"
+
 
 @router.post("/", response_model=TemplateResponse, status_code=status.HTTP_201_CREATED)
 async def create_template(
@@ -62,7 +88,8 @@ async def create_template(
     current_user: User = Depends(get_current_user)
 ):
     """Create a new template (name optional). Only one active per type; new template starts inactive."""
-    db_template = Template(type=template.type, name=template.name, is_active=False)
+    name = template.name if template.name is not None else _template_fallback_name(template.type)
+    db_template = Template(type=template.type, name=name, is_active=False)
     db.add(db_template)
     db.commit()
     db.refresh(db_template)
@@ -82,6 +109,12 @@ async def update_template(
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Template not found")
     if body.name is not None:
         template.name = body.name
+    elif getattr(template, "name", None) is None:
+        # Resilient: DB row may have no name column or NULL (e.g. pre-migration)
+        try:
+            template.name = _template_fallback_name(template.type)
+        except Exception:
+            template.name = "Untitled Template"
     db.commit()
     db.refresh(template)
     return template

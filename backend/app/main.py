@@ -100,6 +100,28 @@ async def startup_event():
         logger.error("[STARTUP] Permission seeding failed: %s", e, exc_info=True)
         # Don't fail startup - log and continue
 
+    # Templates table schema self-check (warning only; do not crash)
+    try:
+        from sqlalchemy import text
+        from app.core.database import SessionLocal
+        required_columns = {"name", "type", "is_active", "active_revision_id", "created_at", "updated_at"}
+        db = SessionLocal()
+        try:
+            r = db.execute(text(
+                "SELECT column_name FROM information_schema.columns WHERE table_schema = 'public' AND table_name = 'templates'"
+            ))
+            present = {row[0] for row in r}
+            missing = required_columns - present
+            if missing:
+                logger.warning(
+                    "[STARTUP] templates table missing columns: %s. Run: alembic upgrade head",
+                    sorted(missing),
+                )
+        finally:
+            db.close()
+    except Exception as e:
+        logger.warning("[STARTUP] Templates table self-check skipped: %s", e)
+
     # Scheduler: start only once (advisory lock); after DB is reachable
     try:
         from app.services.scheduler import start_scheduler
