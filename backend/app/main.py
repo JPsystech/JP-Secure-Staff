@@ -143,15 +143,18 @@ async def shutdown_event():
     except Exception as e:
         logger.warning("[SHUTDOWN] Scheduler: %s", e)
 
-# CORS: ALLOWED_ORIGINS env (comma-separated) or defaults
-from app.core.config import get_cors_origins
+# CORS: must be added before routers so preflight OPTIONS returns 200 and browser allows POST.
+# Allows Vercel frontend + local dev; OPTIONS (preflight) are handled by CORSMiddleware and do not hit auth.
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=get_cors_origins(),
-    allow_credentials=True,
+    allow_origins=[
+        "https://jp-secure-staff.vercel.app",
+        "http://localhost:5173",
+        "http://localhost:3000",
+    ],
+    allow_credentials=False,
     allow_methods=["*"],
     allow_headers=["*"],
-    expose_headers=["*"],
 )
 
 # Global exception handlers to prevent crashes
