@@ -100,6 +100,14 @@ async def startup_event():
         logger.error("[STARTUP] Permission seeding failed: %s", e, exc_info=True)
         # Don't fail startup - log and continue
 
+    # Production user bootstrap: create initial users from ENV only when enabled
+    try:
+        from app.services.production_bootstrap import bootstrap_production_users
+        bootstrap_production_users()
+    except Exception as e:
+        logger.error("[STARTUP] Production bootstrap failed: %s", e, exc_info=True)
+        # Don't fail startup - log and continue
+
     # Templates table schema self-check (warning only; do not crash)
     try:
         from sqlalchemy import text
