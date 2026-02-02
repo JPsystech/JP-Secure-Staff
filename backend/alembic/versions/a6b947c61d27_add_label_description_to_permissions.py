@@ -16,6 +16,14 @@ branch_labels = None
 depends_on = None
 
 
+def _index_exists(table_name: str, index_name: str) -> bool:
+    """Return True if the given index exists on the table (PostgreSQL-safe)."""
+    bind = op.get_bind()
+    inspector = sa.inspect(bind)
+    indexes = inspector.get_indexes(table_name)
+    return any(idx["name"] == index_name for idx in indexes)
+
+
 def _access_grants_has_scope_value():
     """Return True if access_grants.scope_value column exists (PostgreSQL-safe)."""
     bind = op.get_bind()
@@ -45,26 +53,35 @@ def upgrade() -> None:
     op.alter_column('access_grants', 'ticket_id',
                existing_type=sa.UUID(),
                nullable=True)
-    op.create_index(op.f('ix_access_grants_expires_at'), 'access_grants', ['expires_at'], unique=False)
-    op.create_index(op.f('ix_access_grants_granted_to_user_id'), 'access_grants', ['granted_to_user_id'], unique=False)
-    op.create_index(op.f('ix_access_grants_id'), 'access_grants', ['id'], unique=False)
-    op.create_index(op.f('ix_access_grants_person_id'), 'access_grants', ['person_id'], unique=False)
+    if not _index_exists('access_grants', 'ix_access_grants_expires_at'):
+        op.create_index(op.f('ix_access_grants_expires_at'), 'access_grants', ['expires_at'], unique=False)
+    if not _index_exists('access_grants', 'ix_access_grants_granted_to_user_id'):
+        op.create_index(op.f('ix_access_grants_granted_to_user_id'), 'access_grants', ['granted_to_user_id'], unique=False)
+    if not _index_exists('access_grants', 'ix_access_grants_id'):
+        op.create_index(op.f('ix_access_grants_id'), 'access_grants', ['id'], unique=False)
+    if not _index_exists('access_grants', 'ix_access_grants_person_id'):
+        op.create_index(op.f('ix_access_grants_person_id'), 'access_grants', ['person_id'], unique=False)
     op.drop_column('access_grants', 'doc_category')
     op.drop_column('access_grants', 'document_ids')
     op.alter_column('audit_logs', 'action_metadata',
                existing_type=postgresql.JSONB(astext_type=sa.Text()),
                type_=sa.JSON(),
                existing_nullable=True)
-    op.create_index(op.f('ix_audit_logs_id'), 'audit_logs', ['id'], unique=False)
+    if not _index_exists('audit_logs', 'ix_audit_logs_id'):
+        op.create_index(op.f('ix_audit_logs_id'), 'audit_logs', ['id'], unique=False)
     op.add_column('permissions', sa.Column('label', sa.String(), nullable=True))
     op.add_column('permissions', sa.Column('description', sa.String(), nullable=True))
     op.drop_index('ix_persons_activated_at', table_name='persons')
-    op.create_index(op.f('ix_ticket_attachments_id'), 'ticket_attachments', ['id'], unique=False)
-    op.create_index(op.f('ix_ticket_comments_id'), 'ticket_comments', ['id'], unique=False)
+    if not _index_exists('ticket_attachments', 'ix_ticket_attachments_id'):
+        op.create_index(op.f('ix_ticket_attachments_id'), 'ticket_attachments', ['id'], unique=False)
+    if not _index_exists('ticket_comments', 'ix_ticket_comments_id'):
+        op.create_index(op.f('ix_ticket_comments_id'), 'ticket_comments', ['id'], unique=False)
     op.drop_constraint('tickets_ticket_no_key', 'tickets', type_='unique')
     op.drop_index('ix_tickets_ticket_no', table_name='tickets')
-    op.create_index(op.f('ix_tickets_ticket_no'), 'tickets', ['ticket_no'], unique=True)
-    op.create_index(op.f('ix_tickets_id'), 'tickets', ['id'], unique=False)
+    if not _index_exists('tickets', 'ix_tickets_ticket_no'):
+        op.create_index(op.f('ix_tickets_ticket_no'), 'tickets', ['ticket_no'], unique=True)
+    if not _index_exists('tickets', 'ix_tickets_id'):
+        op.create_index(op.f('ix_tickets_id'), 'tickets', ['id'], unique=False)
     # ### end Alembic commands ###
 
 
