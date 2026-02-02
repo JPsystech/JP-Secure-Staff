@@ -1,6 +1,6 @@
 'use client'
 
-import { useState, useEffect } from 'react'
+import { useState, useEffect, Suspense } from 'react'
 import { useRouter, useSearchParams } from 'next/navigation'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
@@ -30,7 +30,22 @@ interface Person {
   created_at: string
 }
 
-export default function FinanceInboxPage() {
+function FinanceInboxSkeleton() {
+  return (
+    <div className="space-y-6">
+      <div className="h-10 w-64 bg-muted animate-pulse rounded" />
+      <Card>
+        <CardContent className="p-6 space-y-4">
+          {[1, 2, 3].map((i) => (
+            <Skeleton key={i} className="h-16 w-full" />
+          ))}
+        </CardContent>
+      </Card>
+    </div>
+  )
+}
+
+function FinanceInboxContent() {
   const router = useRouter()
   const searchParams = useSearchParams()
   const { toast } = useToast()
@@ -47,26 +62,21 @@ export default function FinanceInboxPage() {
     fetchInbox()
   }, [])
 
-  // Check for person ID in URL after data loads
+  const personParam = searchParams.get('person') ?? null
   useEffect(() => {
-    const personId = searchParams.get('person')
-    if (personId) {
-      if (persons.length > 0) {
-        // Find person in inbox list
-        const person = persons.find(p => p.id === personId)
-        if (person) {
-          setSelectedPerson(person)
-          setDrawerOpen(true)
-        } else {
-          // If person not in inbox, fetch it directly
-          fetchPersonById(personId)
-        }
-      } else if (!loading) {
-        // If inbox is loaded but empty, or person not found, fetch directly
-        fetchPersonById(personId)
+    if (!personParam) return
+    if (persons.length > 0) {
+      const person = persons.find((p) => p.id === personParam)
+      if (person) {
+        setSelectedPerson(person)
+        setDrawerOpen(true)
+      } else {
+        fetchPersonById(personParam)
       }
+    } else if (!loading) {
+      fetchPersonById(personParam)
     }
-  }, [persons, searchParams, loading])
+  }, [personParam, persons, loading])
 
   useEffect(() => {
     filterPersons()
@@ -276,5 +286,13 @@ export default function FinanceInboxPage() {
         onComplete={handleDrawerComplete}
       />
     </div>
+  )
+}
+
+export default function FinanceInboxPage() {
+  return (
+    <Suspense fallback={<FinanceInboxSkeleton />}>
+      <FinanceInboxContent />
+    </Suspense>
   )
 }

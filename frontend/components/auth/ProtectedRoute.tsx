@@ -1,6 +1,6 @@
 'use client'
 
-import { useEffect, useState } from 'react'
+import { useEffect, useState, useRef } from 'react'
 import { useRouter, usePathname } from 'next/navigation'
 import { auth } from '@/lib/api'
 
@@ -12,14 +12,23 @@ interface ProtectedRouteProps {
 export default function ProtectedRoute({ children, requireAdmin = false }: ProtectedRouteProps) {
   const router = useRouter()
   const pathname = usePathname()
+  const pathnameRef = useRef(pathname)
+  pathnameRef.current = pathname
   const [isLoading, setIsLoading] = useState(true)
   const [isAuthorized, setIsAuthorized] = useState(false)
+  const didRun = useRef(false)
 
+  // Run auth check ONCE on mount to avoid re-running on every pathname change (which caused infinite _rsc refetch)
   useEffect(() => {
+    if (didRun.current) return
+    didRun.current = true
+    if (process.env.NODE_ENV === 'development') {
+      console.debug('[ProtectedRoute] auth check run once per mount')
+    }
     const checkAuth = async () => {
       const token = localStorage.getItem('token')
       if (!token) {
-        if (pathname !== '/login') router.push('/login')
+        if (pathnameRef.current !== '/login') router.push('/login')
         setIsLoading(false)
         return
       }
@@ -28,13 +37,13 @@ export default function ProtectedRoute({ children, requireAdmin = false }: Prote
         if (response.error) {
           localStorage.removeItem('token')
           localStorage.removeItem('user')
-          if (pathname !== '/login') router.push('/login')
+          if (pathnameRef.current !== '/login') router.push('/login')
           setIsLoading(false)
           return
         }
         if (response.data) {
           if (requireAdmin && response.data.role !== 'MASTER_ADMIN') {
-            if (pathname !== '/dashboard') router.push('/dashboard')
+            if (pathnameRef.current !== '/dashboard') router.push('/dashboard')
             setIsLoading(false)
             return
           }
@@ -43,13 +52,13 @@ export default function ProtectedRoute({ children, requireAdmin = false }: Prote
       } catch (error) {
         localStorage.removeItem('token')
         localStorage.removeItem('user')
-        if (pathname !== '/login') router.push('/login')
+        if (pathnameRef.current !== '/login') router.push('/login')
       } finally {
         setIsLoading(false)
       }
     }
     checkAuth()
-  }, [pathname, requireAdmin])
+  }, [requireAdmin])
 
   if (isLoading) {
     return (

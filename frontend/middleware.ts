@@ -2,31 +2,35 @@ import { NextResponse } from 'next/server'
 import type { NextRequest } from 'next/server'
 
 export function middleware(request: NextRequest) {
-  const token = request.cookies.get('token')?.value || 
+  const pathname = request.nextUrl.pathname
+
+  if (process.env.NODE_ENV === 'development') {
+    console.debug('[middleware] run once per request:', pathname)
+  }
+
+  // Safe guards: never redirect or modify _next, static assets, api, or files with extensions
+  if (pathname.startsWith('/_next') || pathname.startsWith('/api') || pathname.includes('.')) {
+    return NextResponse.next()
+  }
+  if (pathname === '/favicon.ico') {
+    return NextResponse.next()
+  }
+
+  const token = request.cookies.get('token')?.value ||
     request.headers.get('authorization')?.replace('Bearer ', '')
 
-  // Public routes that don't require authentication
   const publicRoutes = ['/login', '/admin-login']
-  const isPublicRoute = publicRoutes.some(route => 
-    request.nextUrl.pathname === route
-  )
+  const isPublicRoute = publicRoutes.some((route) => pathname === route)
 
-  // Admin routes require MASTER_ADMIN role
-  const isAdminRoute = request.nextUrl.pathname.startsWith('/admin')
-
-  // If accessing public route, allow
   if (isPublicRoute) {
     return NextResponse.next()
   }
 
-  // For protected routes, check token in client-side
-  // Server-side middleware can't access localStorage, so we'll handle this in components
+  // Protected routes: auth is handled in ProtectedRoute (client); no redirect to same path
   return NextResponse.next()
 }
 
 export const config = {
-  matcher: [
-    '/((?!api|_next/static|_next/image|favicon.ico).*)',
-  ],
+  matcher: ['/((?!api|_next/static|_next/image|favicon.ico).*)'],
 }
 

@@ -1,6 +1,6 @@
 'use client'
 
-import { useState, useEffect } from 'react'
+import { useState, useEffect, Suspense } from 'react'
 import { useRouter, useSearchParams } from 'next/navigation'
 import { PageHeader } from '@/components/ui/PageHeader'
 import { SectionHeader } from '@/components/ui/SectionHeader'
@@ -16,6 +16,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from '@/components/ui/select'
+import { Skeleton } from '@/components/ui/skeleton'
 import { apiRequest } from '@/lib/api'
 import { useToast } from '@/components/ui/use-toast'
 import { ArrowLeft, Search } from 'lucide-react'
@@ -36,45 +37,64 @@ interface CreateTicketResponse {
   id: number
 }
 
-export default function CreateTicketPage() {
+function CreateTicketSkeleton() {
+  return (
+    <div className="space-y-6">
+      <div className="h-10 w-64 bg-muted animate-pulse rounded" />
+      <Card>
+        <CardContent className="p-6 space-y-4">
+          {[1, 2, 3, 4].map((i) => (
+            <Skeleton key={i} className="h-12 w-full" />
+          ))}
+        </CardContent>
+      </Card>
+    </div>
+  )
+}
+
+function CreateTicketContent() {
   const router = useRouter()
   const searchParams = useSearchParams()
   const { toast } = useToast()
-  
   const [departments, setDepartments] = useState<Department[]>([])
   const [persons, setPersons] = useState<Person[]>([])
   const [searchQuery, setSearchQuery] = useState('')
   const [selectedPerson, setSelectedPerson] = useState<Person | null>(null)
   const [loading, setLoading] = useState(false)
-  
+
+  const personIdParam = searchParams.get('person_id') ?? ''
+  const categoryParam = searchParams.get('category') ?? 'DOCUMENT_REQUEST'
+  const toDeptParam = searchParams.get('to_dept') ?? ''
+
   const [formData, setFormData] = useState({
     to_dept_id: '',
-    person_id: searchParams.get('person_id') || '',
-    category: searchParams.get('category') || 'DOCUMENT_REQUEST',
+    person_id: personIdParam,
+    category: categoryParam,
     priority: 'NORMAL',
-    subject: searchParams.get('category') === 'DOCUMENT_REQUEST' 
-      ? 'Request access to HR/Finance documents' 
+    subject: categoryParam === 'DOCUMENT_REQUEST'
+      ? 'Request access to HR/Finance documents'
       : '',
-    description: searchParams.get('category') === 'DOCUMENT_REQUEST'
+    description: categoryParam === 'DOCUMENT_REQUEST'
       ? `I request temporary access to view and download Finance/HR documents for the person profile.`
       : '',
   })
 
   useEffect(() => {
     fetchDepartments()
-    if (searchParams.get('person_id')) {
-      fetchPerson(searchParams.get('person_id')!)
+    if (personIdParam) {
+      fetchPerson(personIdParam)
     }
-    if (searchParams.get('to_dept')) {
-      // Find dept by name
-      fetchDepartments().then(() => {
-        const dept = departments.find(d => d.name.toUpperCase().includes(searchParams.get('to_dept')!.toUpperCase()))
-        if (dept) {
-          setFormData(prev => ({ ...prev, to_dept_id: dept.id.toString() }))
-        }
-      })
+  }, [personIdParam])
+
+  useEffect(() => {
+    if (departments.length === 0 || !toDeptParam) return
+    const dept = departments.find((d) =>
+      d.name.toUpperCase().includes(toDeptParam.toUpperCase())
+    )
+    if (dept) {
+      setFormData((prev) => ({ ...prev, to_dept_id: dept.id.toString() }))
     }
-  }, [])
+  }, [departments, toDeptParam])
 
   useEffect(() => {
     if (searchQuery.length > 2) {
@@ -338,3 +358,10 @@ export default function CreateTicketPage() {
   )
 }
 
+export default function CreateTicketPage() {
+  return (
+    <Suspense fallback={<CreateTicketSkeleton />}>
+      <CreateTicketContent />
+    </Suspense>
+  )
+}
