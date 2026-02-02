@@ -2,7 +2,9 @@
 
 ## Railway (backend from GitHub)
 
-Deploy the **backend** only from the `backend` directory so Railway/Nixpacks can detect Python and run migrations + uvicorn.
+**Full guide:** See **backend/RAILWAY_DEPLOY.md** for step-by-step flow, PORT handling, Dockerfile vs start command, env vars, and common mistakes.
+
+Deploy the **backend** only from the `backend` directory so Railway uses the Dockerfile and runs migrations + uvicorn with correct PORT.
 
 1. **Create a new project**
    - In [Railway](https://railway.app), New Project → Deploy from GitHub repo.
