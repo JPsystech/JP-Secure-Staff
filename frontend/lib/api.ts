@@ -14,15 +14,21 @@ export async function apiRequest<T>(
   // FIXED: Don't set Content-Type for FormData (browser will set it with boundary)
   const isFormData = options.body instanceof FormData;
   
-  const headers: HeadersInit = {
-    ...options.headers,
-  };
-  
-  // Only set Content-Type for JSON, not for FormData
+  const headers: Record<string, string> = {};
+  if (options.headers) {
+    if (options.headers instanceof Headers) {
+      options.headers.forEach((value, key) => { headers[key] = value; });
+    } else if (Array.isArray(options.headers)) {
+      for (const [key, value] of options.headers) {
+        headers[key] = value;
+      }
+    } else {
+      Object.assign(headers, options.headers);
+    }
+  }
   if (!isFormData) {
     headers['Content-Type'] = 'application/json';
   }
-  
   if (token) {
     headers['Authorization'] = `Bearer ${token}`;
   }
