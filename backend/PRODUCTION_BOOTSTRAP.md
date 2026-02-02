@@ -1,70 +1,69 @@
 # Production user bootstrap
 
-Creates initial production login users **only from ENV**, when enabled. Idempotent: users are created only if they do not already exist.
+Creates initial **departments** (OPERATIONS, FINANCE, HR, ADMIN), **roles**, and **login users** from ENV when `BOOTSTRAP_ENABLED=true`. Idempotent: nothing is recreated if it already exists. Fixes production login 401 by creating missing users.
 
 ## When it runs
 
-- **ENVIRONMENT** must be `production`
-- **ENABLE_PROD_BOOTSTRAP** must be `true`
+- **BOOTSTRAP_ENABLED** must be `"true"` (default is `"false"`).
 
-Runs once at FastAPI startup. Safe on redeploy and restart (no duplicates).
+Runs once at FastAPI startup. Safe on redeploy and restart (no duplicates). After first successful deploy, set `BOOTSTRAP_ENABLED=false` in Render and redeploy.
 
-## ENV variables (production)
+## Environment variables (Render dashboard)
 
-Set these in Render (or your host) **Environment** tab. Do **not** hardcode in code.
+Set these in **Render → Your Web Service → Environment**. Do **not** hardcode in code.
 
-| Variable | Required | Example | Purpose |
-|----------|----------|--------|--------|
-| `ENVIRONMENT` | Yes | `production` | Must be `production` for bootstrap to run |
-| `ENABLE_PROD_BOOTSTRAP` | Yes | `true` | Set to `true` to create users; set to `false` after first deploy |
-| `PROD_ADMIN_EMAIL` | Yes | `admin@jpsecure.com` | Admin (SUPER_ADMIN / MASTER_ADMIN) |
-| `PROD_ADMIN_PASSWORD` | Yes | *(secure)* | Hashed at runtime; never logged |
-| `PROD_SUBADMIN_EMAIL` | Yes | `subadmin@jpsecure.com` | Sub-Admin (ADMIN / SUB_ADMIN) |
-| `PROD_SUBADMIN_PASSWORD` | Yes | *(secure)* | Hashed at runtime |
-| `PROD_OPS_EMAIL` | Yes | `ops@jpsecure.com` | Operations (MANAGER / OPS_USER) |
-| `PROD_OPS_PASSWORD` | Yes | *(secure)* | Hashed at runtime |
-| `PROD_FINANCE_EMAIL` | Yes | `finance@jpsecure.com` | Finance (MANAGER / FINANCE_USER) |
-| `PROD_FINANCE_PASSWORD` | Yes | *(secure)* | Hashed at runtime |
-| `PROD_HR_EMAIL` | Yes | `hr@jpsecure.com` | HR (MANAGER / HR_USER) |
-| `PROD_HR_PASSWORD` | Yes | *(secure)* | Hashed at runtime |
+| Variable | Required | Default | Purpose |
+|----------|----------|---------|--------|
+| `BOOTSTRAP_ENABLED` | Yes | `false` | Set to `true` for first deploy only; then set back to `false` |
+| `ADMIN_EMAIL` | Yes | — | Admin (Master Admin) |
+| `ADMIN_PASSWORD` | Yes | — | Hashed at runtime; never logged |
+| `SUBADMIN_EMAIL` | Yes | — | Sub-Admin |
+| `SUBADMIN_PASSWORD` | Yes | — | Hashed at runtime |
+| `OPS_EMAIL` | Yes | — | Operations user |
+| `OPS_PASSWORD` | Yes | — | Hashed at runtime |
+| `FINANCE_EMAIL` | Yes | — | Finance user |
+| `FINANCE_PASSWORD` | Yes | — | Hashed at runtime |
+| `HR_EMAIL` | Yes | — | HR user |
+| `HR_PASSWORD` | Yes | — | Hashed at runtime |
+| `DEFAULT_PASSWORD_CHANGE_REQUIRED` | No | `false` | Set to `true` to force password change on first login |
 
 ## Role & department mapping
 
-| Email | Role (DB code) | Department (DB code) |
-|-------|----------------|----------------------|
-| admin@jpsecure.com | MASTER_ADMIN | ADMIN |
-| subadmin@jpsecure.com | SUB_ADMIN | ADMIN |
-| ops@jpsecure.com | OPS_USER | OPS (Operations) |
-| finance@jpsecure.com | FINANCE_USER | FIN (Finance) |
-| hr@jpsecure.com | HR_USER | HR (Human Resources) |
+| User | Role (DB) | Department (DB) |
+|------|-----------|-----------------|
+| ADMIN_EMAIL | MASTER_ADMIN | ADMIN (Administration) |
+| SUBADMIN_EMAIL | SUB_ADMIN | ADMIN |
+| OPS_EMAIL | OPS_USER | OPS (Operations) |
+| FINANCE_EMAIL | FINANCE_USER | FIN (Finance) |
+| HR_EMAIL | HR_USER | HR (Human Resources) |
 
-**Prerequisite:** Departments and roles must already exist (e.g. run `scripts/seed_data.py` once, or ensure your migrations/seed create them).
+Bootstrap ensures **departments** (ADMIN, OPS, FIN, HR) and **roles** (MASTER_ADMIN, SUB_ADMIN, OPS_USER, FINANCE_USER, HR_USER) exist; it creates them if missing. Then it creates users only if the email does not already exist (case-insensitive).
 
-## After first successful deploy
+## Logs (no plaintext passwords)
 
-1. Verify you can log in with each account (see credentials below).
-2. In Render → Service → Environment, set:
-   ```bash
-   ENABLE_PROD_BOOTSTRAP=false
-   ```
-3. Redeploy so no further auto-user creation runs.
+- **Bootstrap user created: &lt;email&gt;** — user was created.
+- **Bootstrap user exists: &lt;email&gt;** — user already present; skipped.
+- **Skipped: BOOTSTRAP_ENABLED is not true** — bootstrap did not run.
 
-## Logs
+## Render: enable for one deploy, then disable
 
-- **BOOTSTRAP CREATED: &lt;email&gt;** — user was created (email only; password never logged).
-- **Already existed: &lt;emails&gt;** — users already present; skipped.
-- **Skipped: ENVIRONMENT is not production** / **ENABLE_PROD_BOOTSTRAP is not true** — bootstrap did not run.
+1. **First deploy:** In Render → Service → **Environment**, add:
+   - `BOOTSTRAP_ENABLED` = `true`
+   - `ADMIN_EMAIL`, `ADMIN_PASSWORD`, `SUBADMIN_EMAIL`, `SUBADMIN_PASSWORD`, `OPS_EMAIL`, `OPS_PASSWORD`, `FINANCE_EMAIL`, `FINANCE_PASSWORD`, `HR_EMAIL`, `HR_PASSWORD` (use strong passwords).
+2. Deploy. Check logs for "Bootstrap user created: &lt;email&gt;" to confirm users were created.
+3. **After first successful deploy:** Set `BOOTSTRAP_ENABLED` = `false` and redeploy so no further auto-user creation runs.
+4. Log in at `/api/v1/auth/login` with the same credentials you set in ENV.
 
-## Example credentials (for first-time verification)
+## CLI (manual run)
 
-Use the **passwords you set in ENV** (e.g. the ones from your task). Example logins:
+From **backend** directory, with `DATABASE_URL` (or `POSTGRES_URL`) and the same ENV vars set:
 
-| Email | Password (from your ENV) |
-|-------|--------------------------|
-| admin@jpsecure.com | `JpS@2026!Admin#01` (PROD_ADMIN_PASSWORD) |
-| subadmin@jpsecure.com | `JpS@2026!Sub#01` (PROD_SUBADMIN_PASSWORD) |
-| ops@jpsecure.com | `JpS@2026!Ops#01` (PROD_OPS_PASSWORD) |
-| finance@jpsecure.com | `JpS@2026!Fin#01` (PROD_FINANCE_PASSWORD) |
-| hr@jpsecure.com | `JpS@2026!Hr#01` (PROD_HR_PASSWORD) |
+```bash
+python -m app.scripts.bootstrap_users
+```
 
-You should be able to log into production with these after the first deploy (with bootstrap enabled) and the same ENV values set.
+Uses the same logic as startup; useful for one-off seeding or debugging.
+
+## `/api/v1/auth/login` in production
+
+Once bootstrap has run with `BOOTSTRAP_ENABLED=true` and the env-provided credentials are set, production login works: users exist in the DB with hashed passwords, so `/api/v1/auth/login` returns 200 and a token instead of 401.

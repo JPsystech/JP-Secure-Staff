@@ -54,6 +54,9 @@ Optional: check DB migration state: `python -m app.scripts.db_check` (from `back
 python scripts/seed_data.py
 ```
 
+5. **Production (Render) – bootstrap initial users:**  
+   For production, set `BOOTSTRAP_ENABLED=true` and the user ENV vars (`ADMIN_EMAIL`, `ADMIN_PASSWORD`, `SUBADMIN_EMAIL`, etc.) in the Render dashboard. On first deploy, the app will create departments/roles and initial users from ENV (no hardcoded passwords). After first successful deploy, set `BOOTSTRAP_ENABLED=false` and redeploy. See [PRODUCTION_BOOTSTRAP.md](PRODUCTION_BOOTSTRAP.md). Optional CLI: `python -m app.scripts.bootstrap_users` (uses `DATABASE_URL` and same ENV vars).
+
 ## Running the API
 
 ### Development Mode
