@@ -152,7 +152,7 @@ app.add_middleware(
         "http://localhost:5173",
         "http://localhost:3000",
     ],
-    allow_credentials=False,
+    allow_credentials=True,  # Required when frontend uses credentials: 'include'
     allow_methods=["*"],
     allow_headers=["*"],
 )
