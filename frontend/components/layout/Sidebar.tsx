@@ -40,13 +40,13 @@ export function Sidebar({ user }: SidebarProps) {
     ...(isOperation || isAdmin ? [
       {
         label: 'Create Person',
-        href: '/operation/create',
+        href: '/persons/new',
         icon: UserPlus,
         show: true,
       },
       {
         label: 'My Submissions',
-        href: '/operation/submissions',
+        href: '/persons',
         icon: FileText,
         show: true,
       },
@@ -60,7 +60,7 @@ export function Sidebar({ user }: SidebarProps) {
     // Finance-specific menu
     {
       label: 'Finance Inbox',
-      href: '/finance/inbox',
+      href: '/tickets',
       icon: FileText,
       show: isFinance || isAdmin,
     },
@@ -68,13 +68,13 @@ export function Sidebar({ user }: SidebarProps) {
     ...(isHR || isAdmin ? [
       {
         label: 'HR Create Person',
-        href: '/hr/intake',
+        href: '/persons/new',
         icon: UserPlus,
         show: !isOperation, // if user is both OPS and HR, use OPS menu above
       },
       {
         label: 'HR Inbox',
-        href: '/hr/inbox',
+        href: '/tickets',
         icon: Users,
         show: !isOperation,
       },
@@ -125,6 +125,7 @@ export function Sidebar({ user }: SidebarProps) {
             <Link
               key={item.href}
               href={item.href}
+              prefetch={false}
               className={cn(
                 "flex items-center gap-3 px-3 py-2 rounded-md text-sm font-medium transition-colors",
                 isActive

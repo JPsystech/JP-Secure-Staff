@@ -42,9 +42,10 @@ export default function UserShell({ children }: UserShellProps) {
               <div className="flex space-x-4">
                 {isOperation && (
                   <Link
-                    href="/operation/create"
+                    href="/persons/new"
+                    prefetch={false}
                     className={`px-3 py-2 rounded-md text-sm font-medium ${
-                      pathname?.startsWith('/operation')
+                      pathname?.startsWith('/persons/new')
                         ? 'bg-primary text-primary-foreground'
                         : 'text-gray-700 hover:bg-gray-100'
                     }`}
@@ -54,9 +55,10 @@ export default function UserShell({ children }: UserShellProps) {
                 )}
                 {isFinance && (
                   <Link
-                    href="/finance/inbox"
+                    href="/tickets"
+                    prefetch={false}
                     className={`px-3 py-2 rounded-md text-sm font-medium ${
-                      pathname?.startsWith('/finance')
+                      pathname?.startsWith('/tickets')
                         ? 'bg-primary text-primary-foreground'
                         : 'text-gray-700 hover:bg-gray-100'
                     }`}
@@ -67,9 +69,10 @@ export default function UserShell({ children }: UserShellProps) {
                 {isHR && (
                   <>
                     <Link
-                      href="/hr/intake"
+                      href="/persons/new"
+                      prefetch={false}
                       className={`px-3 py-2 rounded-md text-sm font-medium ${
-                        pathname?.startsWith('/hr/intake')
+                        pathname?.startsWith('/persons/new')
                           ? 'bg-primary text-primary-foreground'
                           : 'text-gray-700 hover:bg-gray-100'
                       }`}
@@ -77,9 +80,10 @@ export default function UserShell({ children }: UserShellProps) {
                       Create Person
                     </Link>
                     <Link
-                      href="/hr/inbox"
+                      href="/tickets"
+                      prefetch={false}
                       className={`px-3 py-2 rounded-md text-sm font-medium ${
-                        pathname?.startsWith('/hr/inbox')
+                        pathname?.startsWith('/tickets')
                           ? 'bg-primary text-primary-foreground'
                           : 'text-gray-700 hover:bg-gray-100'
                       }`}
@@ -90,6 +94,7 @@ export default function UserShell({ children }: UserShellProps) {
                 )}
                 <Link
                   href="/cv-wallet"
+                  prefetch={false}
                   className={`px-3 py-2 rounded-md text-sm font-medium ${
                     pathname === '/cv-wallet'
                       ? 'bg-primary text-primary-foreground'

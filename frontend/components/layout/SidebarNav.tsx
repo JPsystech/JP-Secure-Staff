@@ -73,6 +73,7 @@ export function SidebarNavContent({
                 <li key={item.href}>
                   <Link
                     href={item.href}
+                    prefetch={false}
                     onClick={onNavigate}
                     className={cn(
                       'relative flex items-center gap-3 rounded-lg px-3 py-2.5 text-sm font-medium transition-colors duration-150',
@@ -158,8 +159,8 @@ export function getAppNavGroups(user?: { role?: string } | null): NavGroup[] {
           {
             label: 'Operations',
             items: [
-              { label: 'Create Person', href: '/operation/create', icon: UserPlus },
-              { label: 'My Submissions', href: '/operation/submissions', icon: FileText },
+              { label: 'Create Person', href: '/persons/new', icon: UserPlus },
+              { label: 'My Submissions', href: '/persons', icon: FileText },
             ],
           },
         ]
@@ -171,7 +172,7 @@ export function getAppNavGroups(user?: { role?: string } | null): NavGroup[] {
       ? [
           {
             label: 'Finance',
-            items: [{ label: 'Finance Inbox', href: '/finance/inbox', icon: FileText }],
+            items: [{ label: 'Finance Inbox', href: '/tickets', icon: FileText }],
           },
         ]
       : []),
@@ -180,8 +181,8 @@ export function getAppNavGroups(user?: { role?: string } | null): NavGroup[] {
           {
             label: 'HR',
             items: [
-              { label: 'HR Create Person', href: '/hr/intake', icon: UserPlus },
-              { label: 'HR Inbox', href: '/hr/inbox', icon: Users },
+              { label: 'HR Create Person', href: '/persons/new', icon: UserPlus },
+              { label: 'HR Inbox', href: '/tickets', icon: Users },
             ],
           },
         ]

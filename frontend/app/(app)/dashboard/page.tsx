@@ -143,7 +143,7 @@ export default function DashboardPage() {
         <DataCard title="Quick Actions">
           <div className="flex flex-wrap gap-3">
             <Button
-              onClick={() => router.push('/operation/create')}
+              onClick={() => router.push('/persons/new')}
               className="gap-2"
             >
               <UserPlus className="h-4 w-4" />
@@ -151,7 +151,7 @@ export default function DashboardPage() {
             </Button>
             <Button
               variant="outline"
-              onClick={() => router.push('/operation/submissions')}
+              onClick={() => router.push('/persons')}
               className="gap-2"
             >
               <FileText className="h-4 w-4" />
@@ -169,7 +169,7 @@ export default function DashboardPage() {
             <Button
               variant="outline"
               size="sm"
-              onClick={() => router.push('/finance/inbox')}
+              onClick={() => router.push('/tickets')}
             >
               Open Full Inbox
             </Button>
@@ -188,7 +188,7 @@ export default function DashboardPage() {
                 title="No pending profiles"
                 description="No profiles in Finance inbox."
                 action={
-                  <Button variant="outline" size="sm" onClick={() => router.push('/finance/inbox')}>
+                  <Button variant="outline" size="sm" onClick={() => router.push('/tickets')}>
                     Open Inbox
                   </Button>
                 }
@@ -331,7 +331,7 @@ export default function DashboardPage() {
                 title="No submissions yet"
                 description="Create your first profile to get started."
                 action={
-                  <Button size="sm" onClick={() => router.push('/operation/create')}>
+                  <Button size="sm" onClick={() => router.push('/persons/new')}>
                     <UserPlus className="h-4 w-4 mr-2" />
                     Create Profile
                   </Button>
