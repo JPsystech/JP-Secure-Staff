@@ -11,7 +11,6 @@ import { SectionHeader } from '@/components/ui/SectionHeader'
 import { apiRequest } from '@/lib/api'
 import { useToast } from '@/components/ui/use-toast'
 import { ArrowLeft } from 'lucide-react'
-import Link from 'next/link'
 
 export default function CreatePersonPage() {
   const router = useRouter()
@@ -27,32 +26,48 @@ export default function CreatePersonPage() {
     e.preventDefault()
     setLoading(true)
     try {
-      const payload = {
+      const body = {
         name: formData.name.trim(),
         mobile: formData.mobile.replace(/\s/g, ''),
         email: formData.email.trim(),
       }
+      if (!body.name || !body.mobile || !body.email) {
+        toast({
+          title: 'Validation',
+          description: 'Name, mobile, and email are required.',
+          variant: 'destructive',
+        })
+        setLoading(false)
+        return
+      }
       const response = await apiRequest<{ id: string }>('/persons', {
         method: 'POST',
-        body: JSON.stringify(payload),
-        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(body),
       })
-      if (response.data) {
-        toast({ title: 'Success', description: 'Person created successfully' })
-        router.push(`/persons`)
+      if (response.data?.id) {
+        toast({ title: 'Success', description: 'Person created successfully.' })
+        router.push(`/persons/${response.data.id}`)
       } else if (response.error) {
-        toast({ title: 'Error', description: response.error, variant: 'destructive' })
+        toast({
+          title: 'Error',
+          description: response.error,
+          variant: 'destructive',
+        })
       } else {
-        toast({ title: 'Error', description: 'Endpoint not available', variant: 'destructive' })
+        toast({
+          title: 'Endpoint not available',
+          description: 'Create person API did not return data.',
+          variant: 'destructive',
+        })
       }
     } catch (err) {
       toast({
         title: 'Error',
-        description: err instanceof Error ? err.message : 'Endpoint not available',
+        description: err instanceof Error ? err.message : 'Failed to create person',
         variant: 'destructive',
       })
       if (process.env.NODE_ENV === 'development') {
-        console.debug('[CreatePerson] submit error', err)
+        console.debug('[CreatePerson] error:', err)
       }
     } finally {
       setLoading(false)
@@ -65,11 +80,9 @@ export default function CreatePersonPage() {
         title="Create Person"
         subtitle="Add a new person (name, phone, email)"
         actions={
-          <Button variant="outline" asChild>
-            <Link href="/persons" prefetch={false}>
-              <ArrowLeft className="h-4 w-4 mr-2" />
-              Back
-            </Link>
+          <Button variant="outline" onClick={() => router.back()}>
+            <ArrowLeft className="h-4 w-4 mr-2" />
+            Back
           </Button>
         }
       />
@@ -77,7 +90,10 @@ export default function CreatePersonPage() {
       <form onSubmit={handleSubmit}>
         <Card>
           <CardHeader>
-            <SectionHeader title="Person details" description="Name, mobile and email." />
+            <SectionHeader
+              title="Person details"
+              description="Name, mobile (10 digits), and email are required."
+            />
           </CardHeader>
           <CardContent className="space-y-4">
             <div>
@@ -94,9 +110,11 @@ export default function CreatePersonPage() {
               <Label htmlFor="mobile">Mobile *</Label>
               <Input
                 id="mobile"
+                type="tel"
                 value={formData.mobile}
                 onChange={(e) => setFormData((p) => ({ ...p, mobile: e.target.value }))}
                 placeholder="10 digits"
+                maxLength={10}
                 required
               />
             </div>
@@ -115,8 +133,8 @@ export default function CreatePersonPage() {
               <Button type="submit" disabled={loading}>
                 {loading ? 'Creating...' : 'Create Person'}
               </Button>
-              <Button type="button" variant="outline" asChild>
-                <Link href="/persons" prefetch={false}>Cancel</Link>
+              <Button type="button" variant="outline" onClick={() => router.back()}>
+                Cancel
               </Button>
             </div>
           </CardContent>

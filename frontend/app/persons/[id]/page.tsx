@@ -195,7 +195,7 @@ export default function PersonDetailPage() {
       })
       if (response.data) {
         alert('Person marked as active!')
-        router.push('/tickets')
+        router.push('/hr/inbox')
       }
     } catch (err) {
       alert('Failed to mark as active')

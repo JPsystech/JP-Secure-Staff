@@ -70,7 +70,7 @@ export function Sidebar({ user }: SidebarProps) {
         label: 'HR Create Person',
         href: '/persons/new',
         icon: UserPlus,
-        show: !isOperation, // if user is both OPS and HR, use OPS menu above
+        show: !isOperation,
       },
       {
         label: 'HR Inbox',

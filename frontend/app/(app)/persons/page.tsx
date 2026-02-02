@@ -1,14 +1,14 @@
 'use client'
 
 import { useState, useEffect } from 'react'
+import { useRouter } from 'next/navigation'
 import { PageHeader } from '@/components/ui/PageHeader'
 import { Button } from '@/components/ui/button'
 import { Card, CardContent } from '@/components/ui/card'
-import { Skeleton } from '@/components/ui/skeleton'
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table'
+import { Skeleton } from '@/components/ui/skeleton'
 import { apiRequest } from '@/lib/api'
-import { UserPlus, FileText } from 'lucide-react'
-import Link from 'next/link'
+import { UserPlus, Users } from 'lucide-react'
 
 interface Person {
   id: string
@@ -19,9 +19,11 @@ interface Person {
   employee_code?: string
   created_at: string
   stream?: string
+  location?: string
 }
 
 export default function PersonsPage() {
+  const router = useRouter()
   const [persons, setPersons] = useState<Person[]>([])
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
@@ -32,7 +34,7 @@ export default function PersonsPage() {
       setLoading(true)
       setError(null)
       try {
-        const response = await apiRequest<Person[]>('/persons')
+        const response = await apiRequest<Person[]>('/persons?limit=500')
         if (cancelled) return
         if (response.data) {
           setPersons(response.data)
@@ -43,7 +45,7 @@ export default function PersonsPage() {
         if (cancelled) return
         setError(err instanceof Error ? err.message : 'Failed to load persons')
         if (process.env.NODE_ENV === 'development') {
-          console.debug('[Persons] fetch error', err)
+          console.debug('[Persons] fetch error:', err)
         }
       } finally {
         if (!cancelled) setLoading(false)
@@ -57,13 +59,11 @@ export default function PersonsPage() {
     <div className="space-y-6">
       <PageHeader
         title="Persons"
-        subtitle="View and manage person profiles"
+        subtitle="List of persons (My Submissions)"
         actions={
-          <Button asChild>
-            <Link href="/persons/new" prefetch={false}>
-              <UserPlus className="h-4 w-4 mr-2" />
-              Create Person
-            </Link>
+          <Button onClick={() => router.push('/persons/new')}>
+            <UserPlus className="h-4 w-4 mr-2" />
+            Create Person
           </Button>
         }
       />
@@ -78,15 +78,19 @@ export default function PersonsPage() {
             </div>
           ) : error ? (
             <div className="p-8 text-center text-muted-foreground">
-              <FileText className="h-12 w-12 mx-auto mb-2 opacity-50" />
               <p>{error}</p>
+              <p className="text-sm mt-2">Check backend is running and you are logged in.</p>
             </div>
           ) : persons.length === 0 ? (
-            <div className="p-8 text-center text-muted-foreground">
-              <FileText className="h-12 w-12 mx-auto mb-2 opacity-50" />
-              <p>No persons yet.</p>
-              <Button variant="outline" className="mt-4" asChild>
-                <Link href="/persons/new" prefetch={false}>Create Person</Link>
+            <div className="p-12 text-center">
+              <Users className="h-12 w-12 text-muted-foreground mx-auto mb-4" />
+              <h3 className="text-lg font-semibold text-foreground mb-2">No persons yet</h3>
+              <p className="text-sm text-muted-foreground mb-4">
+                Create a person to get started.
+              </p>
+              <Button onClick={() => router.push('/persons/new')}>
+                <UserPlus className="h-4 w-4 mr-2" />
+                Create Person
               </Button>
             </div>
           ) : (
@@ -97,18 +101,24 @@ export default function PersonsPage() {
                   <TableHead>Mobile</TableHead>
                   <TableHead>Email</TableHead>
                   <TableHead>Status</TableHead>
-                  <TableHead>Created</TableHead>
+                  <TableHead className="text-right">Actions</TableHead>
                 </TableRow>
               </TableHeader>
               <TableBody>
-                {persons.map((p) => (
-                  <TableRow key={p.id}>
-                    <TableCell className="font-medium">{p.name}</TableCell>
-                    <TableCell>{p.mobile}</TableCell>
-                    <TableCell>{p.email ?? '—'}</TableCell>
-                    <TableCell>{p.status}</TableCell>
-                    <TableCell className="text-muted-foreground">
-                      {new Date(p.created_at).toLocaleDateString()}
+                {persons.map((person) => (
+                  <TableRow key={person.id}>
+                    <TableCell className="font-medium">{person.name}</TableCell>
+                    <TableCell>{person.mobile}</TableCell>
+                    <TableCell>{person.email ?? '—'}</TableCell>
+                    <TableCell>{person.status}</TableCell>
+                    <TableCell className="text-right">
+                      <Button
+                        variant="outline"
+                        size="sm"
+                        onClick={() => router.push(`/persons/${person.id}`)}
+                      >
+                        View
+                      </Button>
                     </TableCell>
                   </TableRow>
                 ))}
