@@ -37,6 +37,12 @@ uploads/
 storage/
 media/
 
+# Archives (avoid pushing large zips; GitHub limit 100 MB)
+*.zip
+*.tar
+*.tar.gz
+*.rar
+
 # IDE / OS
 .DS_Store
 *.pem
