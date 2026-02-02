@@ -69,8 +69,9 @@ export function SidebarNavContent({
               const Icon = item.icon
               const isActive =
                 pathname === item.href || (item.href !== '/' && pathname?.startsWith(item.href))
+              const uniqueKey = `${group.label ?? 'nav'}-${item.label}-${item.href}`
               return (
-                <li key={item.href}>
+                <li key={uniqueKey}>
                   <Link
                     href={item.href}
                     prefetch={false}
