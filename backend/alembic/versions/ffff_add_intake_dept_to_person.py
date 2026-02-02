@@ -17,12 +17,11 @@ depends_on = None
 
 
 def upgrade() -> None:
-    # Create IntakeDept enum if not exists
+    # Create IntakeDept enum idempotently (SQLSTATE 42710 = duplicate_object)
     op.execute("""
         DO $$ BEGIN
             CREATE TYPE intakedept AS ENUM ('OPERATION', 'HR');
-        EXCEPTION
-            WHEN duplicate_object THEN null;
+        EXCEPTION WHEN SQLSTATE '42710' THEN NULL;
         END $$;
     """)
 

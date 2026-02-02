@@ -1,15 +1,16 @@
 #!/usr/bin/env bash
-# Production start: migrations then uvicorn. Railway sets PORT; default 8000.
+# Production start for Railway: migrations then uvicorn. PORT must be a valid integer.
 set -e
 
-# PORT: Railway injects PORT at runtime. Must be a positive integer for uvicorn.
-# Use default 8000 if unset or not a number (avoids "$PORT is not a valid integer").
-if [[ -z "${PORT}" ]] || ! [[ "${PORT}" =~ ^[0-9]+$ ]]; then
-  export PORT=8000
+# PORT: Railway injects PORT at runtime. uvicorn requires a literal integer (no $PORT string).
+# Default 8000 if unset or not numeric; prevents "Invalid value for '--port': '$PORT' is not a valid integer".
+PORT_NUM=8000
+if [[ -n "${PORT}" ]] && [[ "${PORT}" =~ ^[0-9]+$ ]]; then
+  PORT_NUM="${PORT}"
 fi
 
 echo "Running migrations..."
 alembic upgrade head
 
-echo "Starting uvicorn on 0.0.0.0:${PORT}..."
-exec uvicorn app.main:app --host 0.0.0.0 --port "${PORT}"
+echo "Starting uvicorn on 0.0.0.0:${PORT_NUM}..."
+exec uvicorn app.main:app --host 0.0.0.0 --port "${PORT_NUM}"

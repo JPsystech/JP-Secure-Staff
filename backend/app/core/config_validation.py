@@ -33,7 +33,7 @@ def validate_config() -> Tuple[List[str], List[str]]:
         else:
             warnings.append("DATABASE_URL is not set (set in .env for backend)")
 
-    secret = os.getenv("SECRET_KEY", "")
+    secret = (os.getenv("SECRET_KEY") or "").strip()
     if not secret or len(secret) < 16:
         if is_production:
             errors.append("SECRET_KEY is missing or too short (min 16 characters)")

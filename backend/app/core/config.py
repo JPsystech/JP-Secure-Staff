@@ -18,9 +18,9 @@ def get_cors_origins() -> List[str]:
 
 
 class Settings(BaseSettings):
-    """DATABASE_URL from env; Railway may provide POSTGRES_URL instead."""
+    """DATABASE_URL from env; Railway may provide POSTGRES_URL. SECRET_KEY validated at startup (not here)."""
     DATABASE_URL: str = ""
-    SECRET_KEY: str
+    SECRET_KEY: str = ""  # Validated in config_validation; empty allows alembic/migrations to run
     ALGORITHM: str = "HS256"
     ACCESS_TOKEN_EXPIRE_MINUTES: int = 30
     MINIO_ENDPOINT: str = "localhost:9000"

@@ -53,15 +53,16 @@ CMD ["/bin/bash", "-c", "./start.sh"]
 #!/usr/bin/env bash
 set -e
 
-if [[ -z "${PORT}" ]] || ! [[ "${PORT}" =~ ^[0-9]+$ ]]; then
-  export PORT=8000
+PORT_NUM=8000
+if [[ -n "${PORT}" ]] && [[ "${PORT}" =~ ^[0-9]+$ ]]; then
+  PORT_NUM="${PORT}"
 fi
 
 echo "Running migrations..."
 alembic upgrade head
 
-echo "Starting uvicorn on 0.0.0.0:${PORT}..."
-exec uvicorn app.main:app --host 0.0.0.0 --port "${PORT}"
+echo "Starting uvicorn on 0.0.0.0:${PORT_NUM}..."
+exec uvicorn app.main:app --host 0.0.0.0 --port "${PORT_NUM}"
 ```
 
 ### requirements.txt changes
@@ -167,3 +168,29 @@ curl -s https://YOUR_RAILWAY_URL/ready
 ```
 
 Use **Root Directory = backend**, Dockerfile CMD as above, and the env vars listed; the app should deploy successfully on the first retry.
+
+---
+
+## 7. Anti-patterns to REMOVE (if present)
+
+| Anti-pattern | Remove / Fix |
+|--------------|--------------|
+| `uvicorn ... --port $PORT` (unquoted or literal `$PORT`) | Use a numeric variable (e.g. `PORT_NUM`) and `--port "${PORT_NUM}"` so the value is always an integer. |
+| `sa.Enum(..., name='x')` without `create_type=False` in migrations | Create the type with `DO $$ BEGIN CREATE TYPE ... EXCEPTION WHEN SQLSTATE '42710' THEN NULL; END $$;` first, then use `postgresql.ENUM(..., create_type=False)`. |
+| `SECRET_KEY` required in Pydantic (no default) | Use `SECRET_KEY: str = ""` in Settings; validate at startup in `validate_config()` and raise in production if missing. |
+| Alembic `env.py` importing config before `load_dotenv()` | Call `load_dotenv()` in `env.py` before importing `app.core.config`. |
+| Hardcoded `--port 8000` in start command | Use `${PORT_NUM}` from validated PORT; default 8000 only when PORT is unset/non-numeric. |
+| `WHEN duplicate_object` in PL/pgSQL for ENUMs | Use `EXCEPTION WHEN SQLSTATE '42710' THEN NULL` for idempotent ENUM creation (42710 = duplicate_object). |
+
+---
+
+## 8. Railway deploy checklist
+
+- [ ] **Root Directory** = `backend`
+- [ ] **Dockerfile path** = `Dockerfile` (relative to root dir)
+- [ ] **Start Command** = leave empty (use Dockerfile CMD)
+- [ ] **Variables:** `DATABASE_URL` (or Railway Postgres → copy `DATABASE_URL`), `SECRET_KEY` (min 32 chars)
+- [ ] **Optional:** `ENVIRONMENT=production`, `ALLOWED_ORIGINS=https://your-frontend.vercel.app`
+- [ ] **Do not set** `PORT` (Railway sets it)
+- [ ] Deploy → open service URL → `/health` (200), `/docs` (Swagger)
+- [ ] If DB already has data: ensure `alembic_version` matches your branch; do not re-run initial migration on a populated DB

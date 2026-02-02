@@ -8,6 +8,13 @@ import sys
 # Add parent directory to path
 sys.path.insert(0, os.path.dirname(os.path.dirname(__file__)))
 
+# Load env before config so DATABASE_URL/SECRET_KEY are available (Railway injects at runtime)
+try:
+    from dotenv import load_dotenv
+    load_dotenv()
+except ImportError:
+    pass
+
 from app.core.database import Base
 from app.core.config import settings
 from app.models import (
@@ -20,8 +27,11 @@ from app.models import (
 # this is the Alembic Config object
 config = context.config
 
-# Override sqlalchemy.url with settings
-config.set_main_option("sqlalchemy.url", settings.DATABASE_URL)
+# Override sqlalchemy.url from env (settings.DATABASE_URL; respects POSTGRES_URL fallback)
+db_url = (getattr(settings, "DATABASE_URL", None) or os.getenv("DATABASE_URL") or os.getenv("POSTGRES_URL") or "").strip()
+if not db_url:
+    raise RuntimeError("DATABASE_URL or POSTGRES_URL must be set for migrations")
+config.set_main_option("sqlalchemy.url", db_url)
 
 # Interpret the config file for Python logging.
 if config.config_file_name is not None:

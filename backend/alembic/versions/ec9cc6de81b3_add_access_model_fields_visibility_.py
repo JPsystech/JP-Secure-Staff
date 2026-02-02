@@ -17,12 +17,11 @@ depends_on = None
 
 
 def upgrade():
-    # Create DocumentVisibilityScope enum
+    # Create DocumentVisibilityScope enum idempotently (SQLSTATE 42710 = duplicate_object)
     op.execute("""
         DO $$ BEGIN
             CREATE TYPE documentvisibilityscope AS ENUM ('PRIVATE', 'PUBLIC_AFTER_FINANCE', 'PUBLIC_ALWAYS');
-        EXCEPTION
-            WHEN duplicate_object THEN null;
+        EXCEPTION WHEN SQLSTATE '42710' THEN NULL;
         END $$;
     """)
     
