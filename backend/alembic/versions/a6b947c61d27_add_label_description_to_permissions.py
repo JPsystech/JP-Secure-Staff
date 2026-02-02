@@ -24,6 +24,17 @@ def _index_exists(table_name: str, index_name: str) -> bool:
     return any(idx["name"] == index_name for idx in indexes)
 
 
+def _unique_constraint_exists(table_name: str, constraint_name: str) -> bool:
+    """Return True if the given unique constraint exists on the table (PostgreSQL-safe)."""
+    bind = op.get_bind()
+    inspector = sa.inspect(bind)
+    try:
+        uq_constraints = inspector.get_unique_constraints(table_name)
+    except Exception:
+        return False
+    return any(uq.get("name") == constraint_name for uq in uq_constraints)
+
+
 def _access_grants_has_scope_value():
     """Return True if access_grants.scope_value column exists (PostgreSQL-safe)."""
     bind = op.get_bind()
@@ -76,8 +87,10 @@ def upgrade() -> None:
         op.create_index(op.f('ix_ticket_attachments_id'), 'ticket_attachments', ['id'], unique=False)
     if not _index_exists('ticket_comments', 'ix_ticket_comments_id'):
         op.create_index(op.f('ix_ticket_comments_id'), 'ticket_comments', ['id'], unique=False)
-    op.drop_constraint('tickets_ticket_no_key', 'tickets', type_='unique')
-    op.drop_index('ix_tickets_ticket_no', table_name='tickets')
+    if _unique_constraint_exists('tickets', 'tickets_ticket_no_key'):
+        op.drop_constraint('tickets_ticket_no_key', 'tickets', type_='unique')
+    if _index_exists('tickets', 'ix_tickets_ticket_no'):
+        op.drop_index('ix_tickets_ticket_no', table_name='tickets')
     if not _index_exists('tickets', 'ix_tickets_ticket_no'):
         op.create_index(op.f('ix_tickets_ticket_no'), 'tickets', ['ticket_no'], unique=True)
     if not _index_exists('tickets', 'ix_tickets_id'):
