@@ -3,6 +3,7 @@ from sqlalchemy import create_engine
 from sqlalchemy.ext.declarative import declarative_base
 from sqlalchemy.orm import sessionmaker
 from sqlalchemy.exc import SQLAlchemyError, OperationalError
+from fastapi import HTTPException
 from app.core.config import settings
 
 logger = logging.getLogger(__name__)
@@ -19,14 +20,16 @@ SessionLocal = sessionmaker(autocommit=False, autoflush=False, bind=engine)
 
 Base = declarative_base()
 
+
 def get_db():
     """
-    FIXED: Database session dependency with error handling.
-    Never crashes if DB is temporarily unavailable.
+    Database session dependency. Logs only real DB errors; lets HTTPException (e.g. 401) propagate.
     """
     db = SessionLocal()
     try:
         yield db
+    except HTTPException:
+        raise
     except OperationalError as e:
         logger.error(f"Database connection error: {str(e)}")
         db.rollback()

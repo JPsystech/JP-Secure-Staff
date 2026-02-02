@@ -6,6 +6,7 @@ from fastapi.security.utils import get_authorization_scheme_param
 from typing import Optional
 from sqlalchemy.orm import Session
 from sqlalchemy.exc import SQLAlchemyError
+from sqlalchemy import func
 from app.core.database import get_db
 from app.core.security import verify_password, create_access_token, decode_access_token
 from app.models.user import User
@@ -76,9 +77,9 @@ def get_current_user(
                 headers={"WWW-Authenticate": "Bearer"},
             )
         
-        # Query user from database safely
+        # Query user from database safely (case-insensitive email)
         try:
-            user = db.query(User).filter(User.email == email).first()
+            user = db.query(User).filter(func.lower(User.email) == (email or "").strip().lower()).first()
         except SQLAlchemyError as e:
             logger.error(f"Database error while fetching user: {str(e)}")
             logger.error(traceback.format_exc())
@@ -123,7 +124,8 @@ async def login(request: Request, login_data: LoginRequest, db: Session = Depend
             status_code=status.HTTP_429_TOO_MANY_REQUESTS,
             detail="Too many login attempts. Please try again in a few minutes.",
         )
-    user = db.query(User).filter(User.email == login_data.email).first()
+    email_clean = (login_data.email or "").strip().lower()
+    user = db.query(User).filter(func.lower(User.email) == email_clean).first()
     if not user or not verify_password(login_data.password, user.password_hash):
         raise HTTPException(
             status_code=status.HTTP_401_UNAUTHORIZED,
