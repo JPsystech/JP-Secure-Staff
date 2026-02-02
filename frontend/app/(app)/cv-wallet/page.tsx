@@ -1,6 +1,6 @@
 'use client'
 
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useRef, Suspense } from 'react'
 import { useSearchParams } from 'next/navigation'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
@@ -34,7 +34,24 @@ interface Person {
   rate_display?: string
 }
 
-export default function CVWalletPage() {
+/** Skeleton to avoid layout shift while search params resolve (prevents RSC refetch loop). */
+function CVWalletSkeleton() {
+  return (
+    <PageShell title="CV Wallet" subtitle="All profiles visible after Finance submission">
+      <div className="p-4 space-y-3">
+        {Array.from({ length: 6 }, (_, i) => i).map((i) => (
+          <Skeleton key={i} className="h-12 w-full rounded" />
+        ))}
+      </div>
+    </PageShell>
+  )
+}
+
+/**
+ * Inner content that uses useSearchParams. Wrapped in Suspense so the page does not
+ * opt into client rendering and trigger repeated RSC fetches to /cv-wallet?_rsc=...
+ */
+function CVWalletContent() {
   const searchParams = useSearchParams()
   const [persons, setPersons] = useState<Person[]>([])
   const [filteredPersons, setFilteredPersons] = useState<Person[]>([])
@@ -44,22 +61,27 @@ export default function CVWalletPage() {
   const [searchQuery, setSearchQuery] = useState('')
   const [streamFilter, setStreamFilter] = useState<string>('all')
   const [statusFilter, setStatusFilter] = useState<string>('all')
+  const lastPersonIdParam = useRef<string | null>(null)
 
   useEffect(() => {
+    if (process.env.NODE_ENV === 'development') {
+      console.debug('[CV Wallet] Content mounted (dev: expect 1 nav + 1 fetch)')
+    }
     fetchCVWallet()
   }, [])
 
-  // Handle person_id query parameter to auto-open documents drawer
+  // Stable dependency: only the string value, not searchParams object (avoids RSC refetch loop)
+  const personIdParam = searchParams.get('person_id') ?? null
   useEffect(() => {
-    const personId = searchParams.get('person_id')
-    if (personId && persons.length > 0) {
-      const person = persons.find(p => p.id === personId)
-      if (person) {
-        setSelectedPerson(person)
-        setDrawerOpen(true)
-      }
+    if (!personIdParam || persons.length === 0) return
+    if (lastPersonIdParam.current === personIdParam) return
+    const person = persons.find((p) => p.id === personIdParam)
+    if (person) {
+      lastPersonIdParam.current = personIdParam
+      setSelectedPerson(person)
+      setDrawerOpen(true)
     }
-  }, [searchParams, persons])
+  }, [personIdParam, persons])
 
   useEffect(() => {
     filterPersons()
@@ -285,6 +307,15 @@ export default function CVWalletPage() {
         person={selectedPerson}
       />
     </PageShell>
+  )
+}
+
+/** Page wrapper: Suspense around useSearchParams prevents infinite /cv-wallet?_rsc= refetches. */
+export default function CVWalletPage() {
+  return (
+    <Suspense fallback={<CVWalletSkeleton />}>
+      <CVWalletContent />
+    </Suspense>
   )
 }
 

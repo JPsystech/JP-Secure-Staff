@@ -18,42 +18,38 @@ export default function ProtectedRoute({ children, requireAdmin = false }: Prote
   useEffect(() => {
     const checkAuth = async () => {
       const token = localStorage.getItem('token')
-      
       if (!token) {
-        router.push('/login')
+        if (pathname !== '/login') router.push('/login')
+        setIsLoading(false)
         return
       }
-
       try {
         const response = await auth.me()
-        
         if (response.error) {
           localStorage.removeItem('token')
           localStorage.removeItem('user')
-          router.push('/login')
+          if (pathname !== '/login') router.push('/login')
+          setIsLoading(false)
           return
         }
-
         if (response.data) {
-          // Check admin requirement
           if (requireAdmin && response.data.role !== 'MASTER_ADMIN') {
-            router.push('/dashboard')
+            if (pathname !== '/dashboard') router.push('/dashboard')
+            setIsLoading(false)
             return
           }
-
           setIsAuthorized(true)
         }
       } catch (error) {
         localStorage.removeItem('token')
         localStorage.removeItem('user')
-        router.push('/login')
+        if (pathname !== '/login') router.push('/login')
       } finally {
         setIsLoading(false)
       }
     }
-
     checkAuth()
-  }, [router, requireAdmin])
+  }, [pathname, requireAdmin])
 
   if (isLoading) {
     return (
