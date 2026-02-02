@@ -7,6 +7,7 @@ Create Date: 2026-01-22 11:21:51.508439
 """
 from alembic import op
 import sqlalchemy as sa
+from sqlalchemy.dialects.postgresql import ENUM
 
 
 # revision identifiers, used by Alembic.
@@ -55,7 +56,7 @@ def upgrade() -> None:
         EXCEPTION WHEN SQLSTATE '42710' THEN NULL;
         END $$;
     """)
-    
+
     op.create_table('ticket_counter',
     sa.Column('id', sa.Integer(), nullable=False),
     sa.Column('last_number', sa.Integer(), nullable=False),
@@ -79,14 +80,14 @@ def upgrade() -> None:
     op.create_index(op.f('ix_audit_logs_entity_id'), 'audit_logs', ['entity_id'], unique=False)
     op.create_index(op.f('ix_audit_logs_entity_type'), 'audit_logs', ['entity_type'], unique=False)
     op.create_index(op.f('ix_audit_logs_id'), 'audit_logs', ['id'], unique=False)
-    # Use existing enum types (created by script)
-    ticket_category_enum = sa.Enum('DOCUMENT_REQUEST', 'DATA_CORRECTION', 'CLARIFICATION', 'OTHER', name='ticketcategory', create_type=False)
-    ticket_priority_enum = sa.Enum('LOW', 'NORMAL', 'HIGH', name='ticketpriority', create_type=False)
-    ticket_status_enum = sa.Enum('OPEN', 'IN_PROGRESS', 'WAITING', 'RESOLVED', 'CLOSED', name='ticketstatus', create_type=False)
-    grant_scope_enum = sa.Enum('DOCUMENTS', 'CATEGORY', name='grantscopetype', create_type=False)
-    doc_owner_enum = sa.Enum('OPERATIONS', 'FINANCE', 'HR', name='documentownerdept', create_type=False)
-    doc_category_enum = sa.Enum('STAGE_A', 'FINANCE_KYC', 'HR_SIGNED', 'APPOINTMENT', 'ID_CARD', 'OTHER', name='documentcategory', create_type=False)
-    
+
+    ticket_category_enum = ENUM('DOCUMENT_REQUEST', 'DATA_CORRECTION', 'CLARIFICATION', 'OTHER', name='ticketcategory', create_type=False)
+    ticket_priority_enum = ENUM('LOW', 'NORMAL', 'HIGH', name='ticketpriority', create_type=False)
+    ticket_status_enum = ENUM('OPEN', 'IN_PROGRESS', 'WAITING', 'RESOLVED', 'CLOSED', name='ticketstatus', create_type=False)
+    grant_scope_enum = ENUM('DOCUMENTS', 'CATEGORY', name='grantscopetype', create_type=False)
+    doc_owner_enum = ENUM('OPERATIONS', 'FINANCE', 'HR', name='documentownerdept', create_type=False)
+    doc_category_enum = ENUM('STAGE_A', 'FINANCE_KYC', 'HR_SIGNED', 'APPOINTMENT', 'ID_CARD', 'OTHER', name='documentcategory', create_type=False)
+
     op.create_table('tickets',
     sa.Column('id', sa.UUID(), nullable=False),
     sa.Column('ticket_no', sa.String(), nullable=False),
@@ -182,13 +183,11 @@ def downgrade() -> None:
     op.drop_index(op.f('ix_audit_logs_action_type'), table_name='audit_logs')
     op.drop_table('audit_logs')
     op.drop_table('ticket_counter')
-    
-    # Drop enum types
-    op.execute("DROP TYPE IF EXISTS grantscopetype")
-    op.execute("DROP TYPE IF EXISTS ticketstatus")
-    op.execute("DROP TYPE IF EXISTS ticketpriority")
-    op.execute("DROP TYPE IF EXISTS ticketcategory")
-    op.execute("DROP TYPE IF EXISTS documentcategory")
-    op.execute("DROP TYPE IF EXISTS documentownerdept")
-    # ### end Alembic commands ###
 
+    op.execute("DROP TYPE IF EXISTS grantscopetype CASCADE")
+    op.execute("DROP TYPE IF EXISTS ticketstatus CASCADE")
+    op.execute("DROP TYPE IF EXISTS ticketpriority CASCADE")
+    op.execute("DROP TYPE IF EXISTS ticketcategory CASCADE")
+    op.execute("DROP TYPE IF EXISTS documentcategory CASCADE")
+    op.execute("DROP TYPE IF EXISTS documentownerdept CASCADE")
+    # ### end Alembic commands ###
