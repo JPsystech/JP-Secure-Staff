@@ -96,29 +96,8 @@ def upgrade() -> None:
     )
     op.create_index(op.f('ix_roles_code'), 'roles', ['code'], unique=True)
     op.create_index(op.f('ix_roles_id'), 'roles', ['id'], unique=False)
-    op.create_table('template_revisions',
-    sa.Column('id', sa.Integer(), nullable=False),
-    sa.Column('template_id', sa.Integer(), nullable=False),
-    sa.Column('version', sa.String(), nullable=False),
-    sa.Column('content', sa.String(), nullable=False),
-    sa.Column('status', sa.Enum('DRAFT', 'PUBLISHED', 'ARCHIVED', name='revisionstatus'), nullable=True),
-    sa.Column('created_by', sa.Integer(), nullable=False),
-    sa.Column('created_at', sa.DateTime(timezone=True), server_default=sa.text('now()'), nullable=True),
-    sa.ForeignKeyConstraint(['created_by'], ['users.id'], ),
-    sa.ForeignKeyConstraint(['template_id'], ['templates.id'], ),
-    sa.PrimaryKeyConstraint('id')
-    )
-    op.create_index(op.f('ix_template_revisions_id'), 'template_revisions', ['id'], unique=False)
-    op.create_table('templates',
-    sa.Column('id', sa.Integer(), nullable=False),
-    sa.Column('type', sa.Enum('DECLARATION', 'APPOINTMENT_PERM', 'APPOINTMENT_FREEL', 'APPOINTMENT_CONT', name='templatetype'), nullable=False),
-    sa.Column('active_revision_id', sa.Integer(), nullable=True),
-    sa.Column('created_at', sa.DateTime(timezone=True), server_default=sa.text('now()'), nullable=True),
-    sa.Column('updated_at', sa.DateTime(timezone=True), nullable=True),
-    sa.ForeignKeyConstraint(['active_revision_id'], ['template_revisions.id'], ),
-    sa.PrimaryKeyConstraint('id')
-    )
-    op.create_index(op.f('ix_templates_id'), 'templates', ['id'], unique=False)
+
+    # users MUST exist before template_revisions (FK created_by -> users.id)
     op.create_table('users',
     sa.Column('id', sa.Integer(), nullable=False),
     sa.Column('full_name', sa.String(), nullable=False),
@@ -135,6 +114,35 @@ def upgrade() -> None:
     )
     op.create_index(op.f('ix_users_email'), 'users', ['email'], unique=True)
     op.create_index(op.f('ix_users_id'), 'users', ['id'], unique=False)
+
+    # templates without active_revision_id FK (template_revisions does not exist yet)
+    op.create_table('templates',
+    sa.Column('id', sa.Integer(), nullable=False),
+    sa.Column('type', sa.Enum('DECLARATION', 'APPOINTMENT_PERM', 'APPOINTMENT_FREEL', 'APPOINTMENT_CONT', name='templatetype'), nullable=False),
+    sa.Column('active_revision_id', sa.Integer(), nullable=True),
+    sa.Column('created_at', sa.DateTime(timezone=True), server_default=sa.text('now()'), nullable=True),
+    sa.Column('updated_at', sa.DateTime(timezone=True), nullable=True),
+    sa.PrimaryKeyConstraint('id')
+    )
+    op.create_index(op.f('ix_templates_id'), 'templates', ['id'], unique=False)
+
+    # template_revisions: depends on users and templates (both exist now)
+    op.create_table('template_revisions',
+    sa.Column('id', sa.Integer(), nullable=False),
+    sa.Column('template_id', sa.Integer(), nullable=False),
+    sa.Column('version', sa.String(), nullable=False),
+    sa.Column('content', sa.String(), nullable=False),
+    sa.Column('status', sa.Enum('DRAFT', 'PUBLISHED', 'ARCHIVED', name='revisionstatus'), nullable=True),
+    sa.Column('created_by', sa.Integer(), nullable=False),
+    sa.Column('created_at', sa.DateTime(timezone=True), server_default=sa.text('now()'), nullable=True),
+    sa.ForeignKeyConstraint(['created_by'], ['users.id'], ),
+    sa.ForeignKeyConstraint(['template_id'], ['templates.id'], ),
+    sa.PrimaryKeyConstraint('id')
+    )
+    op.create_index(op.f('ix_template_revisions_id'), 'template_revisions', ['id'], unique=False)
+
+    # Add FK templates.active_revision_id -> template_revisions.id (deferred to break cycle)
+    op.create_foreign_key('templates_active_revision_id_fkey', 'templates', 'template_revisions', ['active_revision_id'], ['id'])
     op.create_table('policies',
     sa.Column('id', sa.Integer(), nullable=False),
     sa.Column('key', sa.String(), nullable=False),
