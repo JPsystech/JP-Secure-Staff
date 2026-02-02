@@ -32,6 +32,10 @@ interface Person {
   employee_code?: string
 }
 
+interface CreateTicketResponse {
+  id: number
+}
+
 export default function CreateTicketPage() {
   const router = useRouter()
   const searchParams = useSearchParams()
@@ -133,7 +137,7 @@ export default function CreateTicketPage() {
         description: formData.description,
       }
 
-      const response = await apiRequest('/tickets', {
+      const response = await apiRequest<CreateTicketResponse>('/tickets', {
         method: 'POST',
         body: JSON.stringify(payload),
       })
