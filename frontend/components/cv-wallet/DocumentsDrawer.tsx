@@ -15,7 +15,7 @@ import { Badge } from '@/components/ui/badge'
 import { SectionHeader } from '@/components/ui/SectionHeader'
 import { EmptyState } from '@/components/ui/EmptyState'
 import { Skeleton } from '@/components/ui/skeleton'
-import { apiRequest } from '@/lib/api'
+import { apiRequest, apiFetch } from '@/lib/api'
 import { useToast } from '@/components/ui/use-toast'
 import { Download, FileText, Key } from 'lucide-react'
 // Simple tooltip using title attribute for now
@@ -168,19 +168,7 @@ export function DocumentsDrawer({ open, onOpenChange, person }: DocumentsDrawerP
   // Unified download helper for ALL document types (Stage-A, Finance, HR)
   const handleDownload = async (doc: { id: number; file_name?: string; doc_name?: string; download_block_reason?: string }) => {
     try {
-      const token = localStorage.getItem('token')
-      const apiBase = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8000'
-      
-      // All documents download via unified CV Wallet endpoint
-      const downloadUrl = `/api/v1/cv-wallet/documents/${doc.id}/download`
-      const fullUrl = `${apiBase}${downloadUrl}`
-      
-      const response = await fetch(fullUrl, {
-        headers: {
-          'Authorization': `Bearer ${token}`,
-        },
-        credentials: 'include',
-      })
+      const response = await apiFetch(`/cv-wallet/documents/${doc.id}/download`)
       
       if (response.ok) {
         // Get blob from response

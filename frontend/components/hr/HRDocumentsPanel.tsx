@@ -5,7 +5,7 @@ import Link from 'next/link'
 import { Button } from '@/components/ui/button'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { Badge } from '@/components/ui/badge'
-import { apiRequest } from '@/lib/api'
+import { apiRequest, apiFetch } from '@/lib/api'
 import { FileText, Download, Eye, Loader2, Upload, Package, Mail, Edit, Save } from 'lucide-react'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
@@ -125,12 +125,7 @@ export default function HRDocumentsPanel({ personId }: HRDocumentsPanelProps) {
     if (docType === 'APPOINTMENT') {
       // For Appointment Letter: Use system-generated PDF endpoint (on-the-fly generation)
       try {
-        const token = localStorage.getItem('token')
-        const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8000'}/api/v1/hr/persons/${personId}/download/appointment`, {
-          headers: {
-            'Authorization': `Bearer ${token}`,
-          },
-        })
+        const response = await apiFetch(`/hr/persons/${personId}/download/appointment`)
         
         if (response.ok) {
           const blob = await response.blob()
@@ -171,12 +166,7 @@ export default function HRDocumentsPanel({ personId }: HRDocumentsPanelProps) {
       if (docId) {
         // Download from saved HR document via HR endpoint
         try {
-          const token = localStorage.getItem('token')
-          const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8000'}/api/v1/hr/documents/${docId}/download`, {
-            headers: {
-              'Authorization': `Bearer ${token}`,
-            },
-          })
+          const response = await apiFetch(`/hr/documents/${docId}/download`)
           
           if (response.ok) {
             const blob = await response.blob()
@@ -295,12 +285,9 @@ export default function HRDocumentsPanel({ personId }: HRDocumentsPanelProps) {
   const handleGenerate = async (docType: 'APPOINTMENT' | 'DECLARATION') => {
     setGenerating(docType)
     try {
-      const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8000'}/api/v1/hr/persons/${personId}/generate`, {
+      const response = await apiFetch(`/hr/persons/${personId}/generate`, {
         method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          'Authorization': `Bearer ${localStorage.getItem('token')}`,
-        },
+        headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ docType }),
       })
 
@@ -345,11 +332,7 @@ export default function HRDocumentsPanel({ personId }: HRDocumentsPanelProps) {
     setPreviewOpen(true)
     setPreviewHtml('') // Clear previous preview
     try {
-      const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8000'}/api/v1/hr/persons/${personId}/preview/${docType.toLowerCase()}`, {
-        headers: {
-          'Authorization': `Bearer ${localStorage.getItem('token')}`,
-        },
-      })
+      const response = await apiFetch(`/hr/persons/${personId}/preview/${docType.toLowerCase()}`)
       if (response.ok) {
         const html = await response.text()
         setPreviewHtml(html)
@@ -381,19 +364,13 @@ export default function HRDocumentsPanel({ personId }: HRDocumentsPanelProps) {
     setEditOpen(true)
     setEditContent('')
     setLoadingEditContent(true)
-    const baseUrl = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8000'
-    const token = localStorage.getItem('token')
     try {
-      const draftRes = await fetch(`${baseUrl}/api/v1/hr/persons/${personId}/draft/${docType}`, {
-        headers: { Authorization: `Bearer ${token}` },
-      })
+      const draftRes = await apiFetch(`/hr/persons/${personId}/draft/${docType}`)
       if (draftRes.ok) {
         const data = await draftRes.json()
         setEditContent(data.content || '')
       } else {
-        const previewRes = await fetch(`${baseUrl}/api/v1/hr/persons/${personId}/preview/${docType.toLowerCase()}`, {
-          headers: { Authorization: `Bearer ${token}` },
-        })
+        const previewRes = await apiFetch(`/hr/persons/${personId}/preview/${docType.toLowerCase()}`)
         if (previewRes.ok) {
           const html = await previewRes.text()
           setEditContent(html)
@@ -730,12 +707,8 @@ export default function HRDocumentsPanel({ personId }: HRDocumentsPanelProps) {
                                                       signedDocType === 'DECLARATION' ? 'Signed Declaration' :
                                                       signedDocType === 'ID_CARD' ? 'ID Card' : 'Other HR Document')
                       
-                      const token = localStorage.getItem('token')
-                      const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8000'}/api/v1/persons/${personId}/documents`, {
+                      const response = await apiFetch(`/persons/${personId}/documents`, {
                         method: 'POST',
-                        headers: {
-                          'Authorization': `Bearer ${token}`,
-                        },
                         body: formDataObj,
                       })
                       
@@ -809,12 +782,7 @@ export default function HRDocumentsPanel({ personId }: HRDocumentsPanelProps) {
                       size="sm"
                       onClick={async () => {
                         try {
-                          const token = localStorage.getItem('token')
-                          const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8000'}/api/v1/hr/documents/${doc.id}/download`, {
-                            headers: {
-                              'Authorization': `Bearer ${token}`,
-                            },
-                          })
+                          const response = await apiFetch(`/hr/documents/${doc.id}/download`)
                           
                           if (response.ok) {
                             const blob = await response.blob()

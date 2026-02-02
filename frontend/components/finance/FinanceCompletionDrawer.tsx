@@ -16,7 +16,7 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { Badge } from '@/components/ui/badge'
 import { Separator } from '@/components/ui/separator'
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
-import { apiRequest } from '@/lib/api'
+import { apiRequest, apiFetch } from '@/lib/api'
 import { useToast } from '@/components/ui/use-toast'
 import { Loader2, CheckCircle2, Upload, X, FileText, Download } from 'lucide-react'
 
@@ -533,12 +533,8 @@ export function FinanceCompletionDrawer({
                           formDataObj.append('stage', 'FINANCE')
                           formDataObj.append('doc_name', 'PAN Card')
                           
-                          const token = localStorage.getItem('token')
-                          const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8000'}/api/v1/persons/${person.id}/documents`, {
+                          const response = await apiFetch(`/persons/${person.id}/documents`, {
                             method: 'POST',
-                            headers: {
-                              'Authorization': `Bearer ${token}`,
-                            },
                             body: formDataObj,
                           })
                           
@@ -605,12 +601,8 @@ export function FinanceCompletionDrawer({
                           formDataObj.append('stage', 'FINANCE')
                           formDataObj.append('doc_name', 'Aadhaar Card')
                           
-                          const token = localStorage.getItem('token')
-                          const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8000'}/api/v1/persons/${person.id}/documents`, {
+                          const response = await apiFetch(`/persons/${person.id}/documents`, {
                             method: 'POST',
-                            headers: {
-                              'Authorization': `Bearer ${token}`,
-                            },
                             body: formDataObj,
                           })
                           
@@ -677,12 +669,8 @@ export function FinanceCompletionDrawer({
                           formDataObj.append('stage', 'FINANCE')
                           formDataObj.append('doc_name', 'Cancelled Cheque')
                           
-                          const token = localStorage.getItem('token')
-                          const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8000'}/api/v1/persons/${person.id}/documents`, {
+                          const response = await apiFetch(`/persons/${person.id}/documents`, {
                             method: 'POST',
-                            headers: {
-                              'Authorization': `Bearer ${token}`,
-                            },
                             body: formDataObj,
                           })
                           
@@ -749,12 +737,7 @@ export function FinanceCompletionDrawer({
                           size="sm"
                           onClick={async () => {
                             try {
-                              const token = localStorage.getItem('token')
-                              const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8000'}/api/v1/finance/documents/${doc.id}/download`, {
-                                headers: {
-                                  'Authorization': `Bearer ${token}`,
-                                },
-                              })
+                              const response = await apiFetch(`/finance/documents/${doc.id}/download`)
                               
                               if (response.ok) {
                                 const blob = await response.blob()

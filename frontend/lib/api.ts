@@ -1,4 +1,44 @@
-const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8000/api/v1';
+/**
+ * Single source of truth for backend API base URL.
+ * Reads NEXT_PUBLIC_API_BASE_URL or NEXT_PUBLIC_API_URL (no hardcoded URLs).
+ * For production (e.g. Render) set in dashboard; locally use .env.local.
+ */
+function getApiBaseUrl(): string {
+  const raw =
+    process.env.NEXT_PUBLIC_API_BASE_URL ||
+    process.env.NEXT_PUBLIC_API_URL ||
+    'http://localhost:8000';
+  const base = raw.replace(/\/$/, '');
+  return base.includes('/api/v1') ? base : `${base}/api/v1`;
+}
+
+/** Auth headers for API requests (JWT from storage if present). */
+function getAuthHeaders(extra: Record<string, string> = {}): Record<string, string> {
+  const token = typeof window !== 'undefined' ? localStorage.getItem('token') : null;
+  return {
+    ...extra,
+    ...(token ? { Authorization: `Bearer ${token}` } : {}),
+  };
+}
+
+export { getApiBaseUrl, getAuthHeaders };
+
+/**
+ * Authenticated fetch to API (same base URL + JWT). Use for blob/download or custom responses.
+ */
+export async function apiFetch(endpoint: string, init: RequestInit = {}): Promise<Response> {
+  const url = `${getApiBaseUrl()}${endpoint.startsWith('/') ? endpoint : `/${endpoint}`}`;
+  const headers: Record<string, string> = {};
+  if (init.headers) {
+    if (init.headers instanceof Headers) {
+      init.headers.forEach((value, key) => { headers[key] = value; });
+    } else if (Array.isArray(init.headers)) {
+      for (const [key, value] of init.headers) headers[key] = value;
+    } else Object.assign(headers, init.headers as Record<string, string>);
+  }
+  Object.assign(headers, getAuthHeaders());
+  return fetch(url, { ...init, headers, credentials: 'include' });
+}
 
 export interface ApiResponse<T> {
   data?: T;
@@ -9,11 +49,7 @@ export async function apiRequest<T>(
   endpoint: string,
   options: RequestInit = {}
 ): Promise<ApiResponse<T>> {
-  const token = typeof window !== 'undefined' ? localStorage.getItem('token') : null;
-  
-  // FIXED: Don't set Content-Type for FormData (browser will set it with boundary)
   const isFormData = options.body instanceof FormData;
-  
   const headers: Record<string, string> = {};
   if (options.headers) {
     if (options.headers instanceof Headers) {
@@ -29,12 +65,10 @@ export async function apiRequest<T>(
   if (!isFormData) {
     headers['Content-Type'] = 'application/json';
   }
-  if (token) {
-    headers['Authorization'] = `Bearer ${token}`;
-  }
+  Object.assign(headers, getAuthHeaders());
 
-    try {
-      const response = await fetch(`${API_BASE_URL}${endpoint}`, {
+  try {
+    const response = await fetch(`${getApiBaseUrl()}${endpoint.startsWith('/') ? endpoint : `/${endpoint}`}`, {
         ...options,
         headers,
         credentials: 'include',  // FIXED: Include credentials for CORS
@@ -123,13 +157,7 @@ export const admin = {
     return apiRequest<{ items: AdminPersonDocItem[] }>(`/admin/persons/${personId}/documents`, { method: 'GET' });
   },
   downloadDoc: async (documentId: number, filename: string) => {
-    const token = typeof window !== 'undefined' ? localStorage.getItem('token') : null;
-    const apiBase = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8000/api/v1';
-    const response = await fetch(`${apiBase}/admin/documents/${documentId}/download`, {
-      method: 'GET',
-      headers: { Authorization: token ? `Bearer ${token}` : '' },
-      credentials: 'include',
-    });
+    const response = await apiFetch(`/admin/documents/${documentId}/download`, { method: 'GET' });
     if (!response.ok) {
       const err = await response.json().catch(() => ({ detail: response.statusText }));
       throw new Error(err.detail || err.message || `HTTP ${response.status}`);
@@ -205,18 +233,7 @@ export const audit = {
     });
     params.append('format', format);
     const queryString = params.toString();
-    
-    const token = typeof window !== 'undefined' ? localStorage.getItem('token') : null;
-    const apiBase = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8000/api/v1';
-    const url = `${apiBase}/audit/logs/export?${queryString}`;
-    
-    const response = await fetch(url, {
-      method: 'GET',
-      headers: {
-        'Authorization': token ? `Bearer ${token}` : '',
-      },
-      credentials: 'include',
-    });
+    const response = await apiFetch(`/audit/logs/export?${queryString}`, { method: 'GET' });
     
     if (!response.ok) {
       const errorData = await response.json().catch(() => ({ detail: response.statusText }));

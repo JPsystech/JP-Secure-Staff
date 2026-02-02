@@ -11,7 +11,7 @@ import { Separator } from '@/components/ui/separator'
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
 import { PageShell } from '@/components/common/PageShell'
 import { DataCard } from '@/components/common/DataCard'
-import { apiRequest } from '@/lib/api'
+import { apiRequest, apiFetch } from '@/lib/api'
 import { useToast } from '@/components/ui/use-toast'
 import { Upload, X, FileText, AlertCircle, CheckCircle2, Circle, Loader2 } from 'lucide-react'
 
@@ -207,15 +207,9 @@ export default function CreatePersonPage() {
         formDataObj.append('doc_name', doc.docName)
         formDataObj.append('is_mandatory', doc.isMandatory.toString())
 
-        const token = localStorage.getItem('token')
         try {
-          const apiBase = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8000'
-          const response = await fetch(`${apiBase}/api/v1/persons/${personId}/documents`, {
+          const response = await apiFetch(`/persons/${personId}/documents`, {
             method: 'POST',
-            headers: {
-              'Authorization': `Bearer ${token}`,
-            },
-            credentials: 'include',
             body: formDataObj,
           })
 

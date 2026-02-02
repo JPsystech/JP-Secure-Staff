@@ -8,9 +8,11 @@ COPY package.json package-lock.json* ./
 RUN npm ci
 
 COPY . .
-# Build-time env for Next (optional)
+# Build-time env for Next (set in Render/Vercel or docker build --build-arg)
+ARG NEXT_PUBLIC_API_BASE_URL
 ARG NEXT_PUBLIC_API_URL
-ENV NEXT_PUBLIC_API_URL=${NEXT_PUBLIC_API_URL:-http://localhost:8000/api/v1}
+ENV NEXT_PUBLIC_API_BASE_URL=${NEXT_PUBLIC_API_BASE_URL}
+ENV NEXT_PUBLIC_API_URL=${NEXT_PUBLIC_API_URL}
 
 RUN npm run build
 

@@ -25,7 +25,7 @@ import {
   DialogTitle,
 } from '@/components/ui/dialog'
 import { SectionHeader } from '@/components/ui/SectionHeader'
-import { apiRequest } from '@/lib/api'
+import { apiRequest, apiFetch } from '@/lib/api'
 import { useToast } from '@/components/ui/use-toast'
 import { ArrowLeft, MessageSquare, Paperclip, Clock, User, Key, X, FileText, ExternalLink } from 'lucide-react'
 
@@ -213,17 +213,10 @@ export default function TicketDetailPage() {
       const formData = new FormData()
       formData.append('file', file)
 
-      const token = localStorage.getItem('token')
-      const response = await fetch(
-        `${process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8000'}/api/v1/tickets/${ticketId}/attachments`,
-        {
-          method: 'POST',
-          headers: {
-            'Authorization': `Bearer ${token}`,
-          },
-          body: formData,
-        }
-      )
+      const response = await apiFetch(`/tickets/${ticketId}/attachments`, {
+        method: 'POST',
+        body: formData,
+      })
 
       if (response.ok) {
         fetchTicket()
