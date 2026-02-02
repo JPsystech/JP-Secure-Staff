@@ -40,13 +40,13 @@ export function Sidebar({ user }: SidebarProps) {
     ...(isOperation || isAdmin ? [
       {
         label: 'Create Person',
-        href: '/persons/new',
+        href: '/operation/create',
         icon: UserPlus,
         show: true,
       },
       {
         label: 'My Submissions',
-        href: '/persons',
+        href: '/operation/submissions',
         icon: FileText,
         show: true,
       },
@@ -68,7 +68,7 @@ export function Sidebar({ user }: SidebarProps) {
     ...(isHR || isAdmin ? [
       {
         label: 'HR Create Person',
-        href: '/persons/new',
+        href: '/operation/create',
         icon: UserPlus,
         show: !isOperation,
       },

@@ -61,7 +61,7 @@ export default function PersonsPage() {
         title="Persons"
         subtitle="List of persons (My Submissions)"
         actions={
-          <Button onClick={() => router.push('/persons/new')}>
+          <Button onClick={() => router.push('/operation/create')}>
             <UserPlus className="h-4 w-4 mr-2" />
             Create Person
           </Button>
@@ -88,7 +88,7 @@ export default function PersonsPage() {
               <p className="text-sm text-muted-foreground mb-4">
                 Create a person to get started.
               </p>
-              <Button onClick={() => router.push('/persons/new')}>
+              <Button onClick={() => router.push('/operation/create')}>
                 <UserPlus className="h-4 w-4 mr-2" />
                 Create Person
               </Button>

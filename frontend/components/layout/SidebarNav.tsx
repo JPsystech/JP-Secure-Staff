@@ -160,7 +160,7 @@ export function getAppNavGroups(user?: { role?: string } | null): NavGroup[] {
           {
             label: 'Operations',
             items: [
-              { label: 'Create Person', href: '/persons/new', icon: UserPlus },
+              { label: 'Create Person', href: '/operation/create', icon: UserPlus },
               { label: 'My Submissions', href: '/persons', icon: FileText },
             ],
           },
@@ -182,7 +182,7 @@ export function getAppNavGroups(user?: { role?: string } | null): NavGroup[] {
           {
             label: 'HR',
             items: [
-              { label: 'HR Create Person', href: '/persons/new', icon: UserPlus },
+              { label: 'HR Create Person', href: '/operation/create', icon: UserPlus },
               { label: 'HR Inbox', href: '/tickets', icon: Users },
             ],
           },

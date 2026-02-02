@@ -13,7 +13,7 @@ from app.models.finance_kyc import FinanceKYC
 from app.models.rate_plan import RatePlan
 from app.schemas.person import PersonSummaryResponse
 from app.schemas.employment import EmploymentCreate, EmploymentResponse
-from app.schemas.finance_kyc import FinanceKYCCreate, FinanceKYCResponse
+from app.schemas.finance_kyc import FinanceKYCCreate, FinanceKYCResponse, FinanceKYCGetResponse
 from app.schemas.rate_plan import RatePlanCreate, RatePlanResponse
 from app.schemas.document import DocumentResponse
 from app.services.employee_code import generate_employee_code
@@ -104,6 +104,29 @@ async def assign_employment(
     db.refresh(employment)
     return employment
 
+
+@router.get("/persons/{person_id}/kyc", response_model=FinanceKYCGetResponse)
+async def get_kyc(
+    person_id: UUID,
+    db: Session = Depends(get_db),
+    current_user: User = Depends(get_current_user)
+):
+    """Get existing finance KYC for a person (for pre-filling forms). Returns 404 if none."""
+    person = db.query(Person).filter(Person.id == person_id).first()
+    if not person:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail="Person not found"
+        )
+    kyc = db.query(FinanceKYC).filter(FinanceKYC.person_id == person_id).first()
+    if not kyc:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail="No KYC record for this person"
+        )
+    return kyc
+
+
 @router.post("/persons/{person_id}/kyc", response_model=FinanceKYCResponse)
 async def create_kyc(
     person_id: UUID,
@@ -140,8 +163,13 @@ async def create_kyc(
         kyc = db.query(FinanceKYC).filter(FinanceKYC.person_id == person_id).first()
         
         if kyc:
-            # Update existing
+            # Update existing: only set fields that have a non-empty value so we never
+            # overwrite existing data with null/empty when frontend sends partial form
             for field, value in kyc_dict.items():
+                if value is None:
+                    continue
+                if isinstance(value, str) and not value.strip():
+                    continue
                 setattr(kyc, field, value)
             logger.info(f"KYC updated for person_id={person_id}")
         else:

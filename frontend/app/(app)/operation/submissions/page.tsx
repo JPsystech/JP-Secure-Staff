@@ -127,7 +127,7 @@ export default function MySubmissionsPage() {
               title="No submissions found"
               description={myOnly ? "You haven't created any profiles yet" : "No profiles found"}
               action={
-                <Button onClick={() => router.push('/persons/new')}>
+                <Button onClick={() => router.push('/operation/create')}>
                   <UserPlus className="h-4 w-4 mr-2" />
                   Create Your First Profile
                 </Button>

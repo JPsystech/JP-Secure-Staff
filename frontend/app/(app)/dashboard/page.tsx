@@ -143,7 +143,7 @@ export default function DashboardPage() {
         <DataCard title="Quick Actions">
           <div className="flex flex-wrap gap-3">
             <Button
-              onClick={() => router.push('/persons/new')}
+              onClick={() => router.push('/operation/create')}
               className="gap-2"
             >
               <UserPlus className="h-4 w-4" />
@@ -331,7 +331,7 @@ export default function DashboardPage() {
                 title="No submissions yet"
                 description="Create your first profile to get started."
                 action={
-                  <Button size="sm" onClick={() => router.push('/persons/new')}>
+                  <Button size="sm" onClick={() => router.push('/operation/create')}>
                     <UserPlus className="h-4 w-4 mr-2" />
                     Create Profile
                   </Button>

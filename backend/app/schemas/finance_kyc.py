@@ -27,3 +27,17 @@ class FinanceKYCResponse(FinanceKYCCreate):
         from_attributes=True
     )
 
+
+class FinanceKYCGetResponse(BaseModel):
+    """Response for GET KYC: all fields optional to match DB (for pre-filling forms)."""
+    person_id: UUID
+    aadhaar: Optional[str] = None
+    pan: Optional[str] = None
+    bank_account_no: Optional[str] = None
+    ifsc: Optional[str] = None
+    bank_name: Optional[str] = None
+    branch: Optional[str] = None
+    created_at: datetime
+
+    model_config = ConfigDict(from_attributes=True)
+

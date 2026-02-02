@@ -76,9 +76,37 @@ export function FinanceCompletionDrawer({
     if (open && person) {
       fetchCompanies()
       resetForm()
+      fetchExistingKycAndSetForm()
       fetchKycDocuments()
     }
   }, [open, person])
+
+  const fetchExistingKycAndSetForm = async () => {
+    if (!person) return
+    try {
+      const response = await apiRequest<{
+        aadhaar?: string | null
+        pan?: string | null
+        bank_account_no?: string | null
+        ifsc?: string | null
+        bank_name?: string | null
+        branch?: string | null
+      }>(`/finance/persons/${person.id}/kyc`)
+      if (response.data) {
+        setFormData((prev) => ({
+          ...prev,
+          aadhaar: response.data?.aadhaar ?? '',
+          pan: response.data?.pan ?? '',
+          bank_account_no: response.data?.bank_account_no ?? '',
+          ifsc: response.data?.ifsc ?? '',
+          bank_name: response.data?.bank_name ?? '',
+          branch: response.data?.branch ?? '',
+        }))
+      }
+    } catch {
+      // No KYC yet: form already reset in useEffect
+    }
+  }
   
   const fetchKycDocuments = async () => {
     if (!person) return

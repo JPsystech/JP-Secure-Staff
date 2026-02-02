@@ -42,10 +42,10 @@ export default function UserShell({ children }: UserShellProps) {
               <div className="flex space-x-4">
                 {isOperation && (
                   <Link
-                    href="/persons/new"
+                    href="/operation/create"
                     prefetch={false}
                     className={`px-3 py-2 rounded-md text-sm font-medium ${
-                      pathname?.startsWith('/persons')
+                      pathname?.startsWith('/operation/create')
                         ? 'bg-primary text-primary-foreground'
                         : 'text-gray-700 hover:bg-gray-100'
                     }`}
@@ -69,10 +69,10 @@ export default function UserShell({ children }: UserShellProps) {
                 {isHR && (
                   <>
                     <Link
-                      href="/persons/new"
+                      href="/operation/create"
                       prefetch={false}
                       className={`px-3 py-2 rounded-md text-sm font-medium ${
-                        pathname?.startsWith('/persons')
+                        pathname?.startsWith('/operation/create')
                           ? 'bg-primary text-primary-foreground'
                           : 'text-gray-700 hover:bg-gray-100'
                       }`}
