@@ -141,7 +141,7 @@ export default function PersonDetailPage() {
       })
       if (response.data) {
         alert('Submitted to HR successfully!')
-        router.push('/finance/inbox')
+        router.push('/tickets')
       }
     } catch (err) {
       alert('Failed to submit to HR')
@@ -195,7 +195,7 @@ export default function PersonDetailPage() {
       })
       if (response.data) {
         alert('Person marked as active!')
-        router.push('/hr/inbox')
+        router.push('/tickets')
       }
     } catch (err) {
       alert('Failed to mark as active')

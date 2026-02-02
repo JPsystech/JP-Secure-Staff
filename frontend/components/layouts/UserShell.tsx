@@ -45,7 +45,7 @@ export default function UserShell({ children }: UserShellProps) {
                     href="/persons/new"
                     prefetch={false}
                     className={`px-3 py-2 rounded-md text-sm font-medium ${
-                      pathname?.startsWith('/persons/new')
+                      pathname?.startsWith('/persons')
                         ? 'bg-primary text-primary-foreground'
                         : 'text-gray-700 hover:bg-gray-100'
                     }`}

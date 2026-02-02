@@ -1,24 +1,16 @@
 'use client'
 
 import { useState, useEffect } from 'react'
-import Link from 'next/link'
 import { PageHeader } from '@/components/ui/PageHeader'
 import { Button } from '@/components/ui/button'
 import { Card, CardContent } from '@/components/ui/card'
-import {
-  Table,
-  TableBody,
-  TableCell,
-  TableHead,
-  TableHeader,
-  TableRow,
-} from '@/components/ui/table'
 import { Skeleton } from '@/components/ui/skeleton'
+import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table'
 import { apiRequest } from '@/lib/api'
-import { useToast } from '@/components/ui/use-toast'
-import { Plus, UserPlus } from 'lucide-react'
+import { UserPlus, FileText } from 'lucide-react'
+import Link from 'next/link'
 
-interface PersonSummary {
+interface Person {
   id: string
   name: string
   mobile: string
@@ -30,45 +22,46 @@ interface PersonSummary {
 }
 
 export default function PersonsPage() {
-  const [persons, setPersons] = useState<PersonSummary[]>([])
+  const [persons, setPersons] = useState<Person[]>([])
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
-  const { toast } = useToast()
 
   useEffect(() => {
-    fetchPersons()
-  }, [])
-
-  const fetchPersons = async () => {
-    setLoading(true)
-    setError(null)
-    try {
-      const response = await apiRequest<PersonSummary[]>('/persons?limit=500')
-      if (response.data) {
-        setPersons(response.data)
-      } else if (response.error) {
-        setError(response.error)
+    let cancelled = false
+    async function fetchPersons() {
+      setLoading(true)
+      setError(null)
+      try {
+        const response = await apiRequest<Person[]>('/persons')
+        if (cancelled) return
+        if (response.data) {
+          setPersons(response.data)
+        } else if (response.error) {
+          setError(response.error)
+        }
+      } catch (err) {
+        if (cancelled) return
+        setError(err instanceof Error ? err.message : 'Failed to load persons')
+        if (process.env.NODE_ENV === 'development') {
+          console.debug('[Persons] fetch error', err)
+        }
+      } finally {
+        if (!cancelled) setLoading(false)
       }
-    } catch (err) {
-      if (process.env.NODE_ENV === 'development') {
-        console.debug('[Persons] fetch error', err)
-      }
-      setError('Failed to load persons')
-      setPersons([])
-    } finally {
-      setLoading(false)
     }
-  }
+    fetchPersons()
+    return () => { cancelled = true }
+  }, [])
 
   return (
     <div className="space-y-6">
       <PageHeader
         title="Persons"
-        subtitle="All persons (submissions and records)"
+        subtitle="View and manage person profiles"
         actions={
           <Button asChild>
             <Link href="/persons/new" prefetch={false}>
-              <Plus className="w-4 h-4 mr-2" />
+              <UserPlus className="h-4 w-4 mr-2" />
               Create Person
             </Link>
           </Button>
@@ -85,20 +78,15 @@ export default function PersonsPage() {
             </div>
           ) : error ? (
             <div className="p-8 text-center text-muted-foreground">
+              <FileText className="h-12 w-12 mx-auto mb-2 opacity-50" />
               <p>{error}</p>
-              <Button variant="outline" className="mt-4" onClick={fetchPersons}>
-                Retry
-              </Button>
             </div>
           ) : persons.length === 0 ? (
-            <div className="p-12 text-center text-muted-foreground">
-              <UserPlus className="w-12 h-12 mx-auto mb-4 opacity-50" />
-              <p className="font-medium">No persons yet</p>
-              <p className="text-sm mt-1">Create a person to get started.</p>
-              <Button asChild className="mt-4">
-                <Link href="/persons/new" prefetch={false}>
-                  Create Person
-                </Link>
+            <div className="p-8 text-center text-muted-foreground">
+              <FileText className="h-12 w-12 mx-auto mb-2 opacity-50" />
+              <p>No persons yet.</p>
+              <Button variant="outline" className="mt-4" asChild>
+                <Link href="/persons/new" prefetch={false}>Create Person</Link>
               </Button>
             </div>
           ) : (
@@ -109,28 +97,18 @@ export default function PersonsPage() {
                   <TableHead>Mobile</TableHead>
                   <TableHead>Email</TableHead>
                   <TableHead>Status</TableHead>
-                  <TableHead>Employee code</TableHead>
-                  <TableHead className="text-right">Actions</TableHead>
+                  <TableHead>Created</TableHead>
                 </TableRow>
               </TableHeader>
               <TableBody>
-                {persons.map((person) => (
-                  <TableRow key={person.id}>
-                    <TableCell className="font-medium">{person.name}</TableCell>
-                    <TableCell>{person.mobile}</TableCell>
-                    <TableCell>{person.email ?? '—'}</TableCell>
-                    <TableCell>
-                      <span className="inline-flex items-center rounded-md px-2 py-1 text-xs font-medium bg-muted">
-                        {person.status}
-                      </span>
-                    </TableCell>
-                    <TableCell>{person.employee_code ?? '—'}</TableCell>
-                    <TableCell className="text-right">
-                      <Button variant="ghost" size="sm" asChild>
-                        <Link href={`/persons/${person.id}`} prefetch={false}>
-                          View
-                        </Link>
-                      </Button>
+                {persons.map((p) => (
+                  <TableRow key={p.id}>
+                    <TableCell className="font-medium">{p.name}</TableCell>
+                    <TableCell>{p.mobile}</TableCell>
+                    <TableCell>{p.email ?? '—'}</TableCell>
+                    <TableCell>{p.status}</TableCell>
+                    <TableCell className="text-muted-foreground">
+                      {new Date(p.created_at).toLocaleDateString()}
                     </TableCell>
                   </TableRow>
                 ))}

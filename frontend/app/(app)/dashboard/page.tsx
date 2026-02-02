@@ -228,7 +228,7 @@ export default function DashboardPage() {
                         <Button
                           variant="default"
                           size="sm"
-                          onClick={() => router.push(`/finance/inbox?person=${person.id}`)}
+                          onClick={() => router.push(`/tickets?person=${person.id}`)}
                         >
                           Complete
                         </Button>
